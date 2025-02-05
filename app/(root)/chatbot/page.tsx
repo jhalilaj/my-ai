@@ -1,52 +1,76 @@
 "use client";
 
 import React, { useState } from "react";
-import ChatBox from "@/components/ChatBox"; // Import the ChatBox component
+import ChatBox from "@/components/ChatBox";
+
+const lessons = ["Lesson 1", "Lesson 2", "Lesson 3"];
 
 const ChatPage: React.FC = () => {
-    const [lessonId, setLessonId] = useState("lesson1"); // ✅ Track selected lesson
+    const [currentLessonIndex, setCurrentLessonIndex] = useState(0);
+    const [selectedLesson, setSelectedLesson] = useState("lesson1");
+
+    const handleNext = () => {
+        setCurrentLessonIndex((prevIndex) => (prevIndex + 1) % lessons.length);
+    };
+
+    const handlePrevious = () => {
+        setCurrentLessonIndex((prevIndex) =>
+            prevIndex === 0 ? lessons.length - 1 : prevIndex - 1
+        );
+    };
+
+    const handleLessonClick = () => {
+        setSelectedLesson(`lesson${currentLessonIndex + 1}`);
+    };
 
     return (
         <div className="min-h-screen bg-customDark text-white flex">
             {/* Chat Section */}
-            <ChatBox lessonId={lessonId} /> {/* ✅ Pass lessonId to ChatBox */}
+            <ChatBox lessonId={selectedLesson} />
 
             {/* Right Section */}
             <div className="w-[400px] bg-customGray shadow-lg border-l border-gray-700 flex flex-col p-4">
-                {/* Progress Section */}
                 <div className="flex flex-col items-center mb-6">
                     <div className="font-bold text-lg mb-2">Your Progress:</div>
                     <div className="w-full h-24 bg-customDark border border-gray-700 rounded-lg"></div>
                 </div>
 
-                {/* Lesson Part Section */}
                 <div className="flex flex-col items-center mb-6">
                     <div className="font-bold text-lg mb-2">Lesson Part:</div>
                     <div className="text-2xl font-bold text-greenAccent underline">3/5</div>
                 </div>
 
-                {/* Lesson Selection Buttons */}
-                <div className="flex flex-col gap-4">
-                    <button 
-                        className={`w-full py-2 rounded-lg shadow-md font-bold ${lessonId === "lesson1" ? "bg-blue-600 text-white" : "bg-blue-500 hover:bg-blue-400"}`} 
-                        onClick={() => setLessonId("lesson1")}
+                {/* Navigation Buttons */}
+                <div className="flex items-center justify-center gap-4 mb-4">
+                    <button
+                        onClick={handlePrevious}
+                        className="px-4 py-2 bg-greenAccent text-black font-bold rounded-md hover:bg-green-400 transition"
                     >
-                        Lesson A
+                        &#8249;
                     </button>
-                    <button 
-                        className={`w-full py-2 rounded-lg shadow-md font-bold ${lessonId === "lesson2" ? "bg-blue-600 text-white" : "bg-blue-500 hover:bg-blue-400"}`} 
-                        onClick={() => setLessonId("lesson2")}
+
+                    <button
+                        onClick={handleLessonClick}
+                        className={`px-8 py-4 rounded-md font-bold transition ${
+                            selectedLesson === `lesson${currentLessonIndex + 1}`
+                                ? "bg-white text-black"
+                                : "bg-greenAccent text-black hover:border-2 hover:border-black"
+                        }`}
                     >
-                        Lesson B
+                        {lessons[currentLessonIndex]}
                     </button>
-                    {/* ✅ New Button for Lesson C */}
-                    <button 
-                        className={`w-full py-2 rounded-lg shadow-md font-bold ${lessonId === "lesson3" ? "bg-green-600 text-white" : "bg-green-500 hover:bg-green-400"}`} 
-                        onClick={() => setLessonId("lesson3")}
+
+                    <button
+                        onClick={handleNext}
+                        className="px-4 py-2 bg-greenAccent text-black font-bold rounded-md hover:bg-green-400 transition"
                     >
-                        Lesson C
+                        &#8250;
                     </button>
                 </div>
+
+                <button className="w-full py-3 bg-greenAccent text-black font-bold rounded-md shadow-md hover:bg-green-400 transition">
+                    Take A Test
+                </button>
             </div>
         </div>
     );
