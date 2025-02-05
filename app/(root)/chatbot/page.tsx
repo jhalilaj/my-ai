@@ -1,4 +1,4 @@
-"use client"; // ✅ Add this line
+"use client";
 
 import React, { useState } from "react";
 import ChatBox from "@/components/ChatBox"; // Import the ChatBox component
@@ -38,6 +38,13 @@ const ChatPage: React.FC = () => {
                         onClick={() => setLessonId("lesson2")}
                     >
                         Lesson B
+                    </button>
+                    {/* ✅ New Button for Lesson C */}
+                    <button 
+                        className={`w-full py-2 rounded-lg shadow-md font-bold ${lessonId === "lesson3" ? "bg-green-600 text-white" : "bg-green-500 hover:bg-green-400"}`} 
+                        onClick={() => setLessonId("lesson3")}
+                    >
+                        Lesson C
                     </button>
                 </div>
             </div>
