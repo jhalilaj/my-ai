@@ -175,9 +175,7 @@ const ChatBox: React.FC<ChatBoxProps> = ({ lessonId }) => {
 
   return (
     <div className="flex flex-col h-screen w-full bg-customDark text-white">
-      <div className="flex justify-between p-4 bg-customGray border-b border-gray-700">
-        <div className="font-bold text-lg">Chatbot - {lessonId}</div>
-      </div>
+
 
       <div
         ref={chatContainerRef}
