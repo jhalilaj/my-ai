@@ -25,6 +25,7 @@ const ChatPage: React.FC = () => {
     const [isGenerating, setIsGenerating] = useState(false);
     const [test, setTest] = useState<Test | null>(null);
     const [activeTab, setActiveTab] = useState<"Lesson" | "Test">("Lesson");
+    const [answers, setAnswers] = useState<{ [key: string]: string }>({}); // Track answers
 
     const handleNext = () => {
         setCurrentLessonIndex((prevIndex) => (prevIndex + 1) % lessons.length);
@@ -59,7 +60,7 @@ const ChatPage: React.FC = () => {
 
             const data = await response.json();
             setTest(data.test);
-            setActiveTab("Test"); // Switch to Test tab after generation
+            setActiveTab("Test");
         } catch (error) {
             console.error("Error generating test:", error);
         } finally {
@@ -67,9 +68,44 @@ const ChatPage: React.FC = () => {
         }
     };
 
+    const handleAnswerChange = (questionId: string, value: string) => {
+        setAnswers((prev) => ({ ...prev, [questionId]: value }));
+    };
+
+    const handleSubmitTest = async () => {
+        if (test) { // Check if test is not null
+            try {
+                // Calculate score
+                const correctAnswers = test.questions.filter((q, index) => 
+                    answers[q.id?.toString() || `question-${index}`] === q.correctAnswer
+                ).length;
+                const score = (correctAnswers / test.questions.length) * 100;
+
+                // Send test data including answers and score to backend
+                const response = await fetch("/api/tests/submitTest", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        lessonId: selectedLesson,
+                        userId: "jhalilaj@york.citycollege.eu",
+                        answers,
+                        score,  // Sending the calculated score to the backend
+                    }),
+                });
+
+                if (response.ok) {
+                    alert(`Test submitted successfully! Your Score: ${score.toFixed(2)}%`);
+                } else {
+                    alert("Failed to submit the test.");
+                }
+            } catch (error) {
+                console.error("Error submitting test:", error);
+            }
+        }
+    };
+
     return (
         <div className="min-h-screen bg-customDark text-white flex">
-            {/* Chat Section */}
             <div className="flex flex-col w-full">
                 <div className="flex gap-4 border-b-2 border-gray-700 p-4 bg-customGray">
                     <button
@@ -112,6 +148,9 @@ const ChatPage: React.FC = () => {
                                                 type="radio"
                                                 name={q.id?.toString() || `question-${index}`}
                                                 value={option}
+                                                onChange={(e) =>
+                                                    handleAnswerChange(q.id?.toString() || `question-${index}`, e.target.value)
+                                                }
                                             />
                                             <label>{option}</label>
                                         </div>
@@ -123,12 +162,18 @@ const ChatPage: React.FC = () => {
                                             type="radio"
                                             name={q.id?.toString() || `question-${index}`}
                                             value="True"
+                                            onChange={() =>
+                                                handleAnswerChange(q.id?.toString() || `question-${index}`, "True")
+                                            }
                                         />{" "}
                                         True
                                         <input
                                             type="radio"
                                             name={q.id?.toString() || `question-${index}`}
                                             value="False"
+                                            onChange={() =>
+                                                handleAnswerChange(q.id?.toString() || `question-${index}`, "False")
+                                            }
                                         />{" "}
                                         False
                                     </div>
@@ -136,17 +181,26 @@ const ChatPage: React.FC = () => {
 
                                 {q.type === "Coding" && (
                                     <textarea
-                                        className="w-full h-2 bg-gray-800 text-white p-2 rounded"
+                                        className="w-full h-24 bg-gray-800 text-white p-2 rounded"
                                         placeholder="Write your code here..."
+                                        onChange={(e) =>
+                                            handleAnswerChange(q.id?.toString() || `question-${index}`, e.target.value)
+                                        }
                                     />
                                 )}
                             </div>
                         ))}
+
+                        <button
+                            onClick={handleSubmitTest}
+                            className="w-full py-2 bg-greenAccent text-black font-bold rounded-md shadow-md hover:bg-green-400 transition"
+                        >
+                            Submit Test
+                        </button>
                     </div>
                 )}
             </div>
 
-            {/* Sidebar Section */}
             <div className="w-[400px] bg-customGray shadow-lg border-l border-gray-700 flex flex-col p-4">
                 <div className="flex flex-col items-center mb-6">
                     <div className="font-bold text-lg mb-2">Your Progress:</div>

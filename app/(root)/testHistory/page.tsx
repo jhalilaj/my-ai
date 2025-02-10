@@ -13,29 +13,44 @@ export default function TestHistoryPage() {
 
     useEffect(() => {
         const fetchTestResults = async () => {
-            const response = await fetch("/api/tests/getTestResults?userId=user123");
-            const data = await response.json();
-            setTestResults(data.results);
+            try {
+                const response = await fetch("/api/tests/getTestResults?userId=jhalilaj@york.citycollege.eu");
+                if (!response.ok) {
+                    throw new Error("Failed to fetch test results");
+                }
+                const data = await response.json();
+                setTestResults(data.results);
+            } catch (error) {
+                console.error("Error fetching test results:", error);
+            }
         };
 
         fetchTestResults();
     }, []);
 
     return (
-        <div style={{ padding: "20px" }}>
-            <h1>User Test History</h1>
+        <div className="min-h-screen bg-customDark text-white p-6">
+            <h1 className="text-2xl font-bold mb-4">📊 Your Test History</h1>
 
             {testResults.length === 0 ? (
-                <p>No test results found.</p>
+                <p className="text-gray-400">No test results found.</p>
             ) : (
-                <ul>
-                    {testResults.map((result, index) => (
-                        <li key={index} style={{ marginBottom: "15px" }}>
-                            <strong>Lesson:</strong> {result.lessonId} <br />
-                            <strong>Score:</strong> {result.score}% <br />
-                            <strong>Date:</strong> {new Date(result.timestamp).toLocaleString()}
-                        </li>
-                    ))}
+                <ul className="space-y-4">
+                    {testResults.map((result, index) => {
+                        // Try to parse the timestamp
+                        const date = new Date(result.timestamp);
+                        const formattedDate = date instanceof Date && !isNaN(date.getTime()) 
+                            ? date.toLocaleString() 
+                            : 'Invalid Date';
+
+                        return (
+                            <li key={index} className="bg-customGray p-4 rounded shadow-md border border-gray-700">
+                                <strong>Lesson:</strong> {result.lessonId.replace("lesson", "Lesson ")} <br />
+                                <strong>Score:</strong> {result.score}% <br />
+                                <strong>Date:</strong> {formattedDate}
+                            </li>
+                        );
+                    })}
                 </ul>
             )}
         </div>
