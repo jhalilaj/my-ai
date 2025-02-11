@@ -2,9 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 export default function UploadPage() {
   const { data: session } = useSession();
+  const router = useRouter();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [lessonTopic, setLessonTopic] = useState("");
   const [teachingStyle, setTeachingStyle] = useState("Simple");
@@ -31,27 +33,35 @@ export default function UploadPage() {
     }
   };
 
-  const handleUpload = async () => {
-    if (!selectedFile) {
-      alert("Please select a file first.");
+  const handleGenerateLesson = async () => {
+    if (!session) {
+      alert("You must be logged in to generate a lesson.");
       return;
     }
 
-    const formData = new FormData();
-    formData.append("file", selectedFile);
+    let uploadedFilePath = "";
 
-    const response = await fetch("/api/upload", {
-      method: "POST",
-      body: formData,
-    });
+    // Upload file if selected
+    if (selectedFile) {
+      const formData = new FormData();
+      formData.append("file", selectedFile);
 
-    const data = await response.json();
-    if (data.success) {
-      setUploadStatus(`File uploaded successfully: ${data.filePath}`);
-      fetchUserFiles();
-    } else {
-      setUploadStatus("Error uploading file");
+      const response = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        uploadedFilePath = data.filePath;
+      } else {
+        alert("Error uploading file");
+        return;
+      }
     }
+
+    // Redirect to Chatbot page with lesson1 and uploaded file (if any)
+    router.push(`/chatbot?lesson=lesson1&file=${encodeURIComponent(uploadedFilePath)}`);
   };
 
   return (
@@ -65,7 +75,7 @@ export default function UploadPage() {
           <input type="file" onChange={handleFileChange} className="w-full text-white bg-gray-700 p-2 rounded-md" />
         </div>
 
-        {/* Text Input for Manual Lesson Topic */}
+        {/* Text Input for Lesson Topic */}
         <div className="mb-4">
           <label className="block text-sm font-medium mb-1">Or Enter a Topic</label>
           <input
@@ -91,28 +101,13 @@ export default function UploadPage() {
           </select>
         </div>
 
-        {/* Upload & Generate Lesson Button */}
+        {/* Generate Lesson Button */}
         <button
-          onClick={handleUpload}
+          onClick={handleGenerateLesson}
           className="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-2 rounded-md transition"
         >
           Generate Lesson
         </button>
-
-        {/* Upload Status Message */}
-        {uploadStatus && <p className="mt-4 text-green-400 text-center">{uploadStatus}</p>}
-
-        {/* List of Uploaded Files */}
-        <h3 className="text-xl font-semibold mt-6 text-center">Your Uploaded Files</h3>
-        <ul className="mt-2 text-sm">
-          {files.map((file, index) => (
-            <li key={index} className="mt-1 text-blue-400">
-              <a href={file.filePath} target="_blank" rel="noopener noreferrer">
-                {file.fileName}
-              </a>
-            </li>
-          ))}
-        </ul>
       </div>
     </div>
   );

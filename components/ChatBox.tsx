@@ -5,14 +5,13 @@ import { useSession } from "next-auth/react";
 
 interface ChatBoxProps {
   lessonId: string;
+  fileContent?: string | null; // ✅ Added fileContent prop
 }
 
-const ChatBox: React.FC<ChatBoxProps> = ({ lessonId }) => {
+const ChatBox: React.FC<ChatBoxProps> = ({ lessonId, fileContent }) => {
   const { data: session } = useSession();
   const [message, setMessage] = useState("");
   const [chatHistory, setChatHistory] = useState<{ sender: string; text?: string; image?: string }[]>([]);
-  const [lessonBHistory, setLessonBHistory] = useState<string>("");
-  const [exampleGenerated, setExampleGenerated] = useState(false); // ✅ Track if example is generated
   const [loading, setLoading] = useState(false);
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
@@ -28,6 +27,7 @@ const ChatBox: React.FC<ChatBoxProps> = ({ lessonId }) => {
     }
   }, [session, lessonId]);
 
+  // ✅ Fetch previous chat history from the database
   const fetchChats = async () => {
     try {
       const res = await fetch(`/api/chat/get?lessonId=${lessonId}`);
@@ -40,79 +40,9 @@ const ChatBox: React.FC<ChatBoxProps> = ({ lessonId }) => {
           text: msg.content,
         }));
         setChatHistory(formattedChats);
-
-        // ✅ Check if the example was already generated
-        if (data.exampleGenerated) {
-          setExampleGenerated(true);
-        }
-      }
-
-      // ✅ Fetch Lesson B history ONLY if Lesson C has no example generated
-      if (lessonId === "lesson3" && !exampleGenerated) {
-        fetchLessonBHistory();
       }
     } catch (error) {
       console.error("Error fetching chats:", error);
-    }
-  };
-
-  const fetchLessonBHistory = async () => {
-    try {
-      const res = await fetch(`/api/chat/get?lessonId=lesson2`);
-      if (!res.ok) throw new Error(`Failed to fetch Lesson B. Status: ${res.status}`);
-
-      const data = await res.json();
-      const combinedHistory = data.chats
-        .map((msg: { role: string; content: string }) => `${msg.role}: ${msg.content}`)
-        .join("\n");
-
-      setLessonBHistory(combinedHistory);
-
-      // ✅ Generate the example ONLY if it hasn't been generated
-      generateExampleOnce(combinedHistory);
-    } catch (error) {
-      console.error("Error fetching Lesson B history:", error);
-    }
-  };
-
-  const generateExampleOnce = async (lessonBContent: string) => {
-    setLoading(true);
-
-    try {
-      const res = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          prompt: `Based on the following conversation:\n${lessonBContent}\n\nGive me an example.`,
-        }),
-      });
-
-      if (!res.ok) throw new Error(`Failed to get AI response. Status: ${res.status}`);
-
-      const data = await res.json();
-      const botResponse = data.message || "Error fetching response.";
-
-      // ✅ Display only the bot’s response
-      setChatHistory((prev) => [...prev, { sender: "Bot", text: botResponse }]);
-
-      // ✅ Save the bot’s response AND mark the example as generated
-      await fetch("/api/chat/save", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId: session?.user?.email,
-          lessonId,
-          exampleGenerated: true, // ✅ Mark example as generated in DB
-          messages: [{ role: "assistant", content: botResponse }],
-        }),
-      });
-
-      setExampleGenerated(true); // ✅ Prevent future generations
-    } catch (error) {
-      console.error("Error generating example:", error);
-      setChatHistory((prev) => [...prev, { sender: "Bot", text: "Network error." }]);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -129,10 +59,18 @@ const ChatBox: React.FC<ChatBoxProps> = ({ lessonId }) => {
     setLoading(true);
 
     try {
-      const prompt =
-        lessonId === "lesson3"
-          ? `Based on the previous conversation from Lesson B:\n${lessonBHistory}\n\nNow answer this:\n${message}`
-          : message;
+      // ✅ Merge past conversations + file content
+      let prompt = `Previous conversation:\n`;
+      chatHistory.forEach((msg) => {
+        prompt += `${msg.sender}: ${msg.text}\n`;
+      });
+
+      // ✅ If file is uploaded & user is in Lesson 1, use file content
+      if (fileContent && lessonId === "lesson1") {
+        prompt += `\nFile Content:\n${fileContent}\n\n`;
+      }
+
+      prompt += `User: ${message}\nAssistant:`;
 
       const res = await fetch("/api/chat", {
         method: "POST",
@@ -149,6 +87,7 @@ const ChatBox: React.FC<ChatBoxProps> = ({ lessonId }) => {
 
       setChatHistory((prev) => [...prev, { sender: "Bot", text: botResponse }]);
 
+      // ✅ Save conversation history in MongoDB
       await fetch("/api/chat/save", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -175,8 +114,6 @@ const ChatBox: React.FC<ChatBoxProps> = ({ lessonId }) => {
 
   return (
     <div className="flex flex-col h-screen w-full bg-customDark text-white">
-
-
       <div
         ref={chatContainerRef}
         className="flex-grow bg-customDark overflow-y-auto p-6 text-gray-300 rounded-md min-h-[60vh] sm:min-h-[65vh] lg:min-h-[70vh] custom-scrollbar"
@@ -184,11 +121,7 @@ const ChatBox: React.FC<ChatBoxProps> = ({ lessonId }) => {
         <div className="space-y-6">
           {chatHistory.map((msg, index) => (
             <div key={index} className="whitespace-pre-wrap break-words">
-              <span
-                className={`font-semibold ${
-                  msg.sender === "You" ? "text-greenAccent" : "text-white"
-                }`}
-              >
+              <span className={`font-semibold ${msg.sender === "You" ? "text-greenAccent" : "text-white"}`}>
                 {msg.sender}:
               </span>{" "}
               {msg.text}
