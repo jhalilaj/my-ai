@@ -2,10 +2,11 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { useSession } from "next-auth/react";
+import ReactMarkdown from "react-markdown"; // ✅ Import Markdown Renderer
 
 interface ChatBoxProps {
   lessonId: string;
-  fileContent?: string | null; // ✅ Added fileContent prop
+  fileContent?: string | null;
 }
 
 const ChatBox: React.FC<ChatBoxProps> = ({ lessonId, fileContent }) => {
@@ -13,6 +14,7 @@ const ChatBox: React.FC<ChatBoxProps> = ({ lessonId, fileContent }) => {
   const [message, setMessage] = useState("");
   const [chatHistory, setChatHistory] = useState<{ sender: string; text?: string; image?: string }[]>([]);
   const [loading, setLoading] = useState(false);
+  const [lessonContent, setLessonContent] = useState<string | null>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -24,8 +26,22 @@ const ChatBox: React.FC<ChatBoxProps> = ({ lessonId, fileContent }) => {
   useEffect(() => {
     if (session?.user?.email) {
       fetchChats();
+      fetchLessonContent();
     }
   }, [session, lessonId]);
+
+  // ✅ Fetch lesson content from API
+  const fetchLessonContent = async () => {
+    try {
+      const res = await fetch(`/api/lesson/get-single?lessonId=${lessonId}`);
+      if (!res.ok) throw new Error(`Failed to fetch lesson content. Status: ${res.status}`);
+
+      const data = await res.json();
+      setLessonContent(data.lesson?.content || "Lesson content not available.");
+    } catch (error) {
+      console.error("Error fetching lesson content:", error);
+    }
+  };
 
   // ✅ Fetch previous chat history from the database
   const fetchChats = async () => {
@@ -59,15 +75,14 @@ const ChatBox: React.FC<ChatBoxProps> = ({ lessonId, fileContent }) => {
     setLoading(true);
 
     try {
-      // ✅ Merge past conversations + file content
       let prompt = `Previous conversation:\n`;
       chatHistory.forEach((msg) => {
         prompt += `${msg.sender}: ${msg.text}\n`;
       });
 
-      // ✅ If file is uploaded & user is in Lesson 1, use file content
-      if (fileContent && lessonId === "lesson1") {
-        prompt += `\nFile Content:\n${fileContent}\n\n`;
+      // ✅ Include lesson content in AI prompt
+      if (lessonContent) {
+        prompt += `\nLesson Content:\n${lessonContent}\n\n`;
       }
 
       prompt += `User: ${message}\nAssistant:`;
@@ -86,6 +101,7 @@ const ChatBox: React.FC<ChatBoxProps> = ({ lessonId, fileContent }) => {
       const newBotMessage = { role: "assistant", content: botResponse };
 
       setChatHistory((prev) => [...prev, { sender: "Bot", text: botResponse }]);
+
 
       // ✅ Save conversation history in MongoDB
       await fetch("/api/chat/save", {
@@ -113,37 +129,48 @@ const ChatBox: React.FC<ChatBoxProps> = ({ lessonId, fileContent }) => {
   };
 
   return (
-    <div className="flex flex-col h-[50vh] w-full bg-customDark text-white">
+    <div className="flex flex-col h-[70vh] w-full bg-customDark text-white rounded-lg shadow-lg">
+      {/* Chat Display */}
       <div
         ref={chatContainerRef}
-        className="flex-grow bg-customDark overflow-y-auto p-6 text-gray-300 rounded-md min-h-[60vh] sm:min-h-[65vh] lg:min-h-[65vh] custom-scrollbar"
+        className="flex-grow overflow-y-auto p-6 text-gray-300 rounded-md min-h-[60vh] sm:min-h-[65vh] lg:min-h-[75vh] custom-scrollbar bg-gray-900"
       >
         <div className="space-y-6">
+          {/* ✅ Render Lesson Content with Markdown */}
+          {lessonContent && (
+            <div className="bg-gray-800 p-4 rounded-md mb-4 text-white">
+              <h2 className="font-bold text-lg">Lesson Content:</h2>
+              <ReactMarkdown className="prose prose-invert">{lessonContent}</ReactMarkdown>
+            </div>
+          )}
+
+          {/* ✅ Render Chat Messages with Markdown Support */}
           {chatHistory.map((msg, index) => (
             <div key={index} className="whitespace-pre-wrap break-words">
               <span className={`font-semibold ${msg.sender === "You" ? "text-greenAccent" : "text-white"}`}>
                 {msg.sender}:
               </span>{" "}
-              {msg.text}
+              <ReactMarkdown className="prose prose-invert">{msg.text || ""}</ReactMarkdown>
             </div>
           ))}
         </div>
       </div>
 
-      <div className="p-5 bg-customGray">
-        <div className="relative">
+      {/* Input Section */}
+      <div className="p-5 bg-gray-800 rounded-b-lg">
+        <div className="relative flex items-center">
           <input
             type="text"
             placeholder="Ask a question..."
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyDown={handleKeyDown}
-            className="w-full border-2 border-black bg-customDark text-white rounded-lg p-5"
+            className="w-full border border-gray-600 bg-gray-700 text-white rounded-lg p-4 pr-12 focus:outline-none focus:ring-2 focus:ring-greenAccent"
             disabled={loading}
           />
           <button
             onClick={handleSend}
-            className="absolute right-3 top-1/2 transform -translate-y-1/2 w-10 h-10 bg-white rounded-md hover:bg-greenAccent"
+            className="absolute right-4 top-1/2 transform -translate-y-1/2 w-10 h-10 bg-greenAccent text-black font-bold rounded-md shadow-md hover:bg-green-400 transition"
             disabled={loading}
           >
             {loading ? "⏳" : "➡"}

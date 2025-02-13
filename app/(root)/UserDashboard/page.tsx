@@ -114,7 +114,8 @@ const UserDashboard: React.FC = () => {
                 <div className="flex space-x-3">
                   <button
                     className="px-4 py-2 bg-blue-500 text-white font-bold rounded-md hover:bg-blue-400 transition"
-                    onClick={() => router.push(`/topic/${topic.id}`)}
+                    onClick={() => router.push(`/chatbot?topicId=${topic.id}&lesson=lesson1`)}
+
                   >
                     Continue Learning
                   </button>
