@@ -3,252 +3,111 @@
 import React, { useState } from "react";
 import ChatBox from "@/components/ChatBox";
 
-interface Question {
-    id?: number;
-    type: "MCQ" | "TrueFalse" | "Coding";
-    questionText: string;
-    options?: string[];
-    correctAnswer: string;
-}
-
-interface Test {
-    lessonId: string;
-    userId: string;
-    questions: Question[];
-}
-
-const lessons = ["Lesson 1", "Lesson 2", "Lesson 3"];
+const lessons = [
+  "Introduction to AI",
+  "Machine Learning Basics",
+  "Deep Learning Fundamentals",
+  "Neural Networks Explained",
+  "Supervised vs Unsupervised Learning",
+  "Natural Language Processing",
+  "Computer Vision Concepts",
+  "Reinforcement Learning",
+  "AI Ethics & Bias",
+  "Future of AI & Research",
+];
 
 const ChatPage: React.FC = () => {
-    const [currentLessonIndex, setCurrentLessonIndex] = useState(0);
-    const [selectedLesson, setSelectedLesson] = useState("lesson1");
-    const [isGenerating, setIsGenerating] = useState(false);
-    const [test, setTest] = useState<Test | null>(null);
-    const [activeTab, setActiveTab] = useState<"Lesson" | "Test">("Lesson");
-    const [answers, setAnswers] = useState<{ [key: string]: string }>({}); // Track answers
+  const [currentLessonIndex, setCurrentLessonIndex] = useState(0);
+  const [activeTab, setActiveTab] = useState(`Lesson ${currentLessonIndex + 1}`);
 
-    const handleNext = () => {
-        setCurrentLessonIndex((prevIndex) => (prevIndex + 1) % lessons.length);
-    };
-
-    const handlePrevious = () => {
-        setCurrentLessonIndex((prevIndex) =>
-            prevIndex === 0 ? lessons.length - 1 : prevIndex - 1
-        );
-    };
-
-    const handleLessonClick = () => {
-        setSelectedLesson(`lesson${currentLessonIndex + 1}`);
-        setActiveTab("Lesson");
-    };
-
-    const handleGenerateTest = async () => {
-        setIsGenerating(true);
-        try {
-            const response = await fetch("/api/tests/generateTest", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    lessonId: selectedLesson,
-                    userId: "jhalilaj@york.citycollege.eu",
-                }),
-            });
-
-            if (!response.ok) {
-                throw new Error(`API Error: ${response.status}`);
-            }
-
-            const data = await response.json();
-            setTest(data.test);
-            setActiveTab("Test");
-        } catch (error) {
-            console.error("Error generating test:", error);
-        } finally {
-            setIsGenerating(false);
-        }
-    };
-
-    const handleAnswerChange = (questionId: string, value: string) => {
-        setAnswers((prev) => ({ ...prev, [questionId]: value }));
-    };
-
-    const handleSubmitTest = async () => {
-        if (test) { // Check if test is not null
-            try {
-                // Calculate score
-                const correctAnswers = test.questions.filter((q, index) => 
-                    answers[q.id?.toString() || `question-${index}`] === q.correctAnswer
-                ).length;
-                const score = (correctAnswers / test.questions.length) * 100;
-
-                // Send test data including answers and score to backend
-                const response = await fetch("/api/tests/submitTest", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        lessonId: selectedLesson,
-                        userId: "jhalilaj@york.citycollege.eu",
-                        answers,
-                        score,  // Sending the calculated score to the backend
-                    }),
-                });
-
-                if (response.ok) {
-                    alert(`Test submitted successfully! Your Score: ${score.toFixed(2)}%`);
-                } else {
-                    alert("Failed to submit the test.");
-                }
-            } catch (error) {
-                console.error("Error submitting test:", error);
-            }
-        }
-    };
-
-    return (
-        <div className="min-h-screen bg-customDark text-white flex">
-            <div className="flex flex-col w-full">
-                <div className="flex gap-4 border-b-2 border-gray-700 p-4 bg-customGray">
-                    <button
-                        className={`px-4 py-2 font-bold ${
-                            activeTab === "Lesson"
-                                ? "border-b-4 border-greenAccent text-greenAccent"
-                                : "text-gray-400"
-                        }`}
-                        onClick={() => setActiveTab("Lesson")}
-                    >
-                        {lessons[currentLessonIndex]}
-                    </button>
-
-                    {test && (
-                        <button
-                            className={`px-4 py-2 font-bold ${
-                                activeTab === "Test"
-                                    ? "border-b-4 border-greenAccent text-greenAccent"
-                                    : "text-gray-400"
-                            }`}
-                            onClick={() => setActiveTab("Test")}
-                        >
-                            Test
-                        </button>
-                    )}
-                </div>
-
-                {activeTab === "Lesson" && <ChatBox lessonId={selectedLesson} />}
-                {activeTab === "Test" && test && (
-                    <div className="p-6">
-                        <h3 className="font-bold text-xl mb-4">Generated Test:</h3>
-                        {test.questions.map((q, index) => (
-                            <div key={index} className="mb-4">
-                                <p className="font-semibold">{q.questionText}</p>
-
-                                {q.type === "MCQ" &&
-                                    q.options?.map((option) => (
-                                        <div key={option}>
-                                            <input
-                                                type="radio"
-                                                name={q.id?.toString() || `question-${index}`}
-                                                value={option}
-                                                onChange={(e) =>
-                                                    handleAnswerChange(q.id?.toString() || `question-${index}`, e.target.value)
-                                                }
-                                            />
-                                            <label>{option}</label>
-                                        </div>
-                                    ))}
-
-                                {q.type === "TrueFalse" && (
-                                    <div>
-                                        <input
-                                            type="radio"
-                                            name={q.id?.toString() || `question-${index}`}
-                                            value="True"
-                                            onChange={() =>
-                                                handleAnswerChange(q.id?.toString() || `question-${index}`, "True")
-                                            }
-                                        />{" "}
-                                        True
-                                        <input
-                                            type="radio"
-                                            name={q.id?.toString() || `question-${index}`}
-                                            value="False"
-                                            onChange={() =>
-                                                handleAnswerChange(q.id?.toString() || `question-${index}`, "False")
-                                            }
-                                        />{" "}
-                                        False
-                                    </div>
-                                )}
-
-                                {q.type === "Coding" && (
-                                    <textarea
-                                        className="w-full h-24 bg-gray-800 text-white p-2 rounded"
-                                        placeholder="Write your code here..."
-                                        onChange={(e) =>
-                                            handleAnswerChange(q.id?.toString() || `question-${index}`, e.target.value)
-                                        }
-                                    />
-                                )}
-                            </div>
-                        ))}
-
-                        <button
-                            onClick={handleSubmitTest}
-                            className="w-full py-2 bg-greenAccent text-black font-bold rounded-md shadow-md hover:bg-green-400 transition"
-                        >
-                            Submit Test
-                        </button>
-                    </div>
-                )}
-            </div>
-
-            <div className="w-[400px] bg-customGray shadow-lg border-l border-gray-700 flex flex-col p-4">
-                <div className="flex flex-col items-center mb-6">
-                    <div className="font-bold text-lg mb-2">Your Progress:</div>
-                    <div className="w-full h-24 bg-customDark border border-gray-700 rounded-lg"></div>
-                </div>
-
-                <div className="flex flex-col items-center mb-6">
-                    <div className="font-bold text-lg mb-2">Lesson Part:</div>
-                    <div className="text-2xl font-bold text-greenAccent underline">3/5</div>
-                </div>
-
-                <div className="flex items-center justify-center gap-4 mb-4">
-                    <button
-                        onClick={handlePrevious}
-                        className="px-4 py-2 bg-greenAccent text-black font-bold rounded-md hover:bg-green-400 transition"
-                    >
-                        &#8249;
-                    </button>
-
-                    <button
-                        onClick={handleLessonClick}
-                        className={`px-8 py-4 rounded-md font-bold transition ${
-                            selectedLesson === `lesson${currentLessonIndex + 1}`
-                                ? "bg-white text-black"
-                                : "bg-greenAccent text-black hover:border-2 hover:border-black"
-                        }`}
-                    >
-                        {lessons[currentLessonIndex]}
-                    </button>
-
-                    <button
-                        onClick={handleNext}
-                        className="px-4 py-2 bg-greenAccent text-black font-bold rounded-md hover:bg-green-400 transition"
-                    >
-                        &#8250;
-                    </button>
-                </div>
-
-                <button
-                    onClick={handleGenerateTest}
-                    disabled={isGenerating}
-                    className="w-full py-3 bg-greenAccent text-black font-bold rounded-md shadow-md hover:bg-green-400 transition"
-                >
-                    {isGenerating ? "Generating Test..." : "Take A Test"}
-                </button>
-            </div>
+  return (
+    <div className="min-h-screen bg-customDark text-white flex">
+      <div className="flex flex-col w-full">
+        {/* Tab Bar for Lessons & Test */}
+        <div className="flex gap-2 border-b-2 border-gray-700 p-4 bg-customGray overflow-x-auto">
+          {lessons.map((_, index) => (
+            <button
+              key={index}
+              className={`px-4 py-2 font-bold ${
+                activeTab === `Lesson ${index + 1}` ? "border-b-4 border-greenAccent text-greenAccent" : "text-gray-400"
+              }`}
+              onClick={() => {
+                setCurrentLessonIndex(index);
+                setActiveTab(`Lesson ${index + 1}`);
+              }}
+            >
+              Lesson {index + 1}
+            </button>
+          ))}
+          <button
+            className={`px-4 py-2 font-bold ${
+              activeTab === "Test" ? "border-b-4 border-greenAccent text-greenAccent" : "text-gray-400"
+            }`}
+            onClick={() => setActiveTab("Test")}
+          >
+            Test
+          </button>
         </div>
-    );
+
+        {/* Lesson or Test Section */}
+        {activeTab.includes("Lesson") && (
+          <div className="p-6 flex flex-col items-center">
+           
+            <ChatBox lessonId={`lesson${currentLessonIndex + 1}`} />
+          </div>
+        )}
+
+        {activeTab === "Test" && (
+          <div className="p-6 flex flex-col items-center">
+            <h2 className="text-2xl font-bold mb-4">Test for {lessons[currentLessonIndex]}</h2>
+            <button className="py-3 px-6 bg-greenAccent text-black font-bold rounded-md shadow-md hover:bg-green-400 transition">
+              Start Test
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Sidebar for Lesson List & Progress */}
+      
+      <div className="w-[450px] bg-customGray shadow-lg border-l border-gray-700 flex flex-col p-4">
+        {/* List of Lessons (Reduced Gap Between Items) */}
+        <div className="flex flex-col gap-1"> {/* Reduced gap from default to gap-1 */}
+          <h3 className="text-lg font-semibold mb-2">Lessons</h3>
+          {lessons.map((lesson, index) => (
+            <button
+              key={index}
+              onClick={() => {
+                setCurrentLessonIndex(index);
+                setActiveTab(`Lesson ${index + 1}`);
+              }}
+              className={`w-full p-3 text-left rounded-md transition ${
+                currentLessonIndex === index
+                  ? "bg-greenAccent text-black font-bold"
+                  : "bg-gray-800 text-white hover:bg-gray-700"
+              }`}
+            >
+              {index + 1} - {lesson}
+            </button>
+          ))}
+        </div>
+        {/* Progress Bar */}
+        <div className="flex flex-col items-center mb-6">
+          <h3 className="text-lg font-semibold mb-2">Lesson Progress</h3>
+          <div className="w-full bg-gray-700 rounded-full h-4">
+            <div
+              className="bg-greenAccent h-4 rounded-full"
+              style={{ width: `${((currentLessonIndex + 1) / lessons.length) * 100}%` }}
+            />
+          </div>
+          <p className="mt-2 text-sm text-gray-300">
+            {currentLessonIndex + 1} / {lessons.length} Lessons Completed
+          </p>
+        </div>
+
+        
+      </div>
+    </div>
+  );
 };
 
 export default ChatPage;

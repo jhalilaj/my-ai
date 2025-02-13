@@ -17,52 +17,47 @@ const FileModel = mongoose.models.File || mongoose.model("File", FileSchema);
 
 export async function POST(req: Request) {
   try {
-    // Get logged-in user session
     const session = await auth();
     if (!session || !session.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Connect to MongoDB
     await connectDB();
-
-    // Find user in MongoDB using email
     const user = await User.findOne({ email: session.user.email });
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    console.log("Authenticated MongoDB User ID:", user._id); // Debugging
+    console.log("Authenticated MongoDB User ID:", user._id);
 
-    // Parse the form data
     const formData = await req.formData();
     const file = formData.get("file") as File;
     if (!file) {
       return NextResponse.json({ error: "File is required" }, { status: 400 });
     }
 
-    // Convert file to buffer
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    // Ensure the uploads directory exists
     const uploadDir = path.join(process.cwd(), "public/uploads");
-    await mkdir(uploadDir, { recursive: true }); // Creates the directory if it doesn't exist
+    await mkdir(uploadDir, { recursive: true });
 
-    // Save file to disk
     const filePath = path.join(uploadDir, file.name);
     await writeFile(filePath, buffer);
 
-    // Store metadata in MongoDB with MongoDB user ID
-    await FileModel.create({
+    // ✅ Store metadata in MongoDB & retrieve file ID
+    const newFile = await FileModel.create({
       userId: user._id,
       fileName: file.name,
       filePath: `/uploads/${file.name}`,
     });
 
-    return NextResponse.json({ success: true, filePath: `/uploads/${file.name}` });
+    console.log("File stored in MongoDB with ID:", newFile._id);
+
+    return NextResponse.json({ success: true, fileId: newFile._id.toString(), filePath: newFile.filePath });
   } catch (error) {
     console.error("Error uploading file:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
+

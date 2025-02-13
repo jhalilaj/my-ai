@@ -113,10 +113,10 @@ const ChatBox: React.FC<ChatBoxProps> = ({ lessonId, fileContent }) => {
   };
 
   return (
-    <div className="flex flex-col h-screen w-full bg-customDark text-white">
+    <div className="flex flex-col h-[50vh] w-full bg-customDark text-white">
       <div
         ref={chatContainerRef}
-        className="flex-grow bg-customDark overflow-y-auto p-6 text-gray-300 rounded-md min-h-[60vh] sm:min-h-[65vh] lg:min-h-[70vh] custom-scrollbar"
+        className="flex-grow bg-customDark overflow-y-auto p-6 text-gray-300 rounded-md min-h-[60vh] sm:min-h-[65vh] lg:min-h-[65vh] custom-scrollbar"
       >
         <div className="space-y-6">
           {chatHistory.map((msg, index) => (

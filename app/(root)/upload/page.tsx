@@ -11,21 +11,6 @@ export default function UploadPage() {
   const [lessonTopic, setLessonTopic] = useState("");
   const [teachingStyle, setTeachingStyle] = useState("Simple");
   const [uploadStatus, setUploadStatus] = useState<string | null>(null);
-  const [files, setFiles] = useState<{ fileName: string; filePath: string }[]>([]);
-
-  useEffect(() => {
-    if (session) {
-      fetchUserFiles();
-    }
-  }, [session]);
-
-  const fetchUserFiles = async () => {
-    const response = await fetch(`/api/files`);
-    const data = await response.json();
-    if (data.success) {
-      setFiles(data.files);
-    }
-  };
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files) {
@@ -35,34 +20,59 @@ export default function UploadPage() {
 
   const handleGenerateLesson = async () => {
     if (!session) {
-      alert("You must be logged in to generate a lesson.");
-      return;
-    }
-
-    let uploadedFilePath = "";
-
-    // Upload file if selected
-    if (selectedFile) {
-      const formData = new FormData();
-      formData.append("file", selectedFile);
-
-      const response = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
-      });
-
-      const data = await response.json();
-      if (data.success) {
-        uploadedFilePath = data.filePath;
-      } else {
-        alert("Error uploading file");
+        alert("You must be logged in to generate a lesson.");
         return;
-      }
     }
 
-    // Redirect to Chatbot page with lesson1 and uploaded file (if any)
-    router.push(`/chatbot?lesson=lesson1&file=${encodeURIComponent(uploadedFilePath)}`);
-  };
+    let fileId = null;
+
+    // ✅ Upload file if selected
+    if (selectedFile) {
+        const formData = new FormData();
+        formData.append("file", selectedFile);
+
+        const response = await fetch("/api/upload", {
+            method: "POST",
+            body: formData,
+        });
+
+        const data = await response.json();
+        if (data.success) {
+            fileId = data.fileId; // ✅ Use fileId instead of filePath
+        } else {
+            alert("Error uploading file");
+            return;
+        }
+    }
+
+    if (!lessonTopic && !fileId) {
+        alert("Please enter a topic title or upload a file.");
+        return;
+    }
+
+    try {
+        const res = await fetch("/api/topics/create", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                topicTitle: lessonTopic || "Untitled Topic",
+                teachingStyle,
+                fileId, // ✅ Ensure we're sending the MongoDB fileId
+            }),
+        });
+
+        const result = await res.json();
+        if (res.ok) {
+            console.log("Topic Created:", result);
+            router.push(`/chatbot?lesson=lesson1&file=${encodeURIComponent(fileId || "")}`);
+        } else {
+            alert(result.error);
+        }
+    } catch (error) {
+        console.error("Error creating topic:", error);
+    }
+};
+
 
   return (
     <div className="flex justify-center items-center min-h-screen bg-gray-900">
@@ -96,8 +106,8 @@ export default function UploadPage() {
             className="w-full bg-gray-700 text-white p-2 rounded-md"
           >
             <option value="Simple">Simple</option>
-            <option value="Detailed">Detailed</option>
-            <option value="Interactive">Interactive</option>
+            <option value="Intermediate">Intermediate</option>
+            <option value="Advanced">Advanced</option>
           </select>
         </div>
 
