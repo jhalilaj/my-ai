@@ -121,10 +121,12 @@ const UserDashboard: React.FC = () => {
                   </button>
                   <button
                     className="px-4 py-2 bg-gray-600 text-white font-bold rounded-md hover:bg-gray-500 transition"
-                    onClick={() => router.push(`/progress/${topic.id}`)}
+                    onClick={() => router.push(`/TopicProgress?topicId=${topic.id}`)}
                   >
                     Check Progress
                   </button>
+
+
                 </div>
               </div>
             ))}
