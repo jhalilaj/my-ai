@@ -21,14 +21,14 @@ export async function POST(req: Request) {
         console.log("➡️ Data received:", { topicId, content, depth });
 
         if (!topicId || !content || !depth) {
-            console.log("❌ Invalid input data");
+            console.log(" Invalid input data");
             return NextResponse.json({ error: "Invalid input data" }, { status: 400 });
         }
 
         // ✅ Validate if Topic exists
         const topic = await Topic.findById(topicId);
         if (!topic) {
-            console.log("❌ Topic not found");
+            console.log(" Topic not found");
             return NextResponse.json({ error: "Topic not found" }, { status: 404 });
         }
 
@@ -43,14 +43,14 @@ export async function POST(req: Request) {
             if (fileData.success && fileData.content) {
                 extractedText = fileData.content;
             } else {
-                console.error("❌ Failed to extract text from file.");
+                console.error(" Failed to extract text from file.");
                 return NextResponse.json({ error: "Failed to read file content." }, { status: 500 });
             }
         }
 
-        console.log("📖 Extracted Text:", extractedText.substring(0, 500)); // Show first 500 chars
+        console.log(" Extracted Text:", extractedText.substring(0, 500)); // Show first 500 chars
 
-        console.log("🧠 Calling OpenAI to split topic into sections...");
+        console.log("Calling OpenAI to split topic into sections...");
         const sectionPrompt = `
           You are an AI tutor. Analyze the following topic and divide it into ${depth} major sections that best cover the subject.
           Topic Content: ${extractedText}
@@ -79,7 +79,7 @@ export async function POST(req: Request) {
                 throw new Error("OpenAI response is not a valid JSON array.");
             }
         } catch (error) {
-            console.error("❌ Error parsing OpenAI response:", error);
+            console.error(" Error parsing OpenAI response:", error);
             return NextResponse.json({ error: "Failed to generate sections due to OpenAI response format." }, { status: 500 });
         }
 
@@ -127,7 +127,7 @@ export async function POST(req: Request) {
         console.log("✅ Lessons Generated Successfully");
         return NextResponse.json({ success: true, lessons });
     } catch (error) {
-        console.error("❌ Lesson Generation Error:", error);
+        console.error(" Lesson Generation Error:", error);
         return NextResponse.json({ error: "Failed to generate lessons." }, { status: 500 });
     }
 }

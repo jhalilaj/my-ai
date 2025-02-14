@@ -1,17 +1,27 @@
-import mongoose from 'mongoose';
+import mongoose, { Schema, Document } from "mongoose";
 
-const QuestionSchema = new mongoose.Schema({
-    questionText: String,
-    type: String, // MCQ, TrueFalse, Coding
-    options: [String],
-    correctAnswer: String,
+interface ITest extends Document {
+  lessonId: mongoose.Schema.Types.ObjectId;
+  questions: { question: string; options: string[] }[];
+  correctAnswers: number[];
+  userAnswers?: number[];
+  score?: number;
+  createdAt: Date;
+}
+
+// ✅ Ensure there is only ONE schema definition
+const TestSchema = new Schema<ITest>({
+  lessonId: { type: mongoose.Schema.Types.ObjectId, ref: "Lesson", required: true },
+  questions: [
+    {
+      question: { type: String, required: true },
+      options: { type: [String], required: true },
+    },
+  ],
+  correctAnswers: { type: [Number], required: true },
+  userAnswers: { type: [Number], default: [] },
+  score: { type: Number, default: null },
+  createdAt: { type: Date, default: Date.now },
 });
 
-const TestSchema = new mongoose.Schema({
-    userId: { type: String, required: true },
-    lessonId: { type: String, required: true },
-    questions: [QuestionSchema],
-    timestamp: { type: Date, default: Date.now },
-});
-
-export default mongoose.models.Test || mongoose.model('Test', TestSchema);
+export default mongoose.models.Test || mongoose.model<ITest>("Test", TestSchema);

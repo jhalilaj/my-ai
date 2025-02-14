@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import ChatBox from "@/components/ChatBox";
+import TestComponent from "@/components/TestComponent"; // ✅ Import Test UI
 
 const ChatPage: React.FC = () => {
   const searchParams = useSearchParams();
@@ -12,6 +13,8 @@ const ChatPage: React.FC = () => {
   const [currentLessonIndex, setCurrentLessonIndex] = useState(0);
   const [activeTab, setActiveTab] = useState("Lesson 1");
   const [loading, setLoading] = useState(true);
+  const [test, setTest] = useState(null);
+  const [testLoading, setTestLoading] = useState(false); // ✅ Loading state for test generation
 
   useEffect(() => {
     if (topicId) {
@@ -33,6 +36,52 @@ const ChatPage: React.FC = () => {
     }
   };
 
+  // ✅ Fetch test when "Start Test" is clicked
+// ✅ Modify fetchTest to generate a test if not found
+const fetchTest = async () => {
+  try {
+    setTestLoading(true);
+    const res = await fetch(`/api/test/get?lessonId=${lessons[currentLessonIndex]?._id}`);
+
+    if (res.status === 404) {
+      console.warn("Test not found, generating a new test...");
+      await generateTest(); // ✅ If test not found, generate one
+      return;
+    }
+
+    if (!res.ok) throw new Error("Failed to fetch test");
+
+    const data = await res.json();
+    setTest(data.test || null);
+  } catch (error) {
+    console.error("Error fetching test:", error);
+  } finally {
+    setTestLoading(false);
+  }
+};
+
+// ✅ Function to Generate a Test
+const generateTest = async () => {
+  try {
+    setTestLoading(true);
+    const res = await fetch(`/api/test/generate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ lessonId: lessons[currentLessonIndex]?._id }),
+    });
+
+    if (!res.ok) throw new Error("Failed to generate test");
+
+    const data = await res.json();
+    setTest(data.test); // ✅ Set the test after it's created
+  } catch (error) {
+    console.error("Error generating test:", error);
+  } finally {
+    setTestLoading(false);
+  }
+};
+
+
   return (
     <div className="min-h-screen bg-customDark text-white flex">
       <div className="flex flex-col w-full">
@@ -50,6 +99,7 @@ const ChatPage: React.FC = () => {
                 onClick={() => {
                   setCurrentLessonIndex(index);
                   setActiveTab(`Lesson ${index + 1}`);
+                  setTest(null); // Reset test when switching lessons
                 }}
               >
                 Lesson {index + 1}
@@ -60,7 +110,10 @@ const ChatPage: React.FC = () => {
             className={`px-4 py-2 font-bold ${
               activeTab === "Test" ? "border-b-4 border-greenAccent text-greenAccent" : "text-gray-400"
             }`}
-            onClick={() => setActiveTab("Test")}
+            onClick={() => {
+              setActiveTab("Test");
+              fetchTest(); // ✅ Fetch test when clicking "Test"
+            }}
           >
             Test
           </button>
@@ -68,7 +121,7 @@ const ChatPage: React.FC = () => {
 
         {/* Lesson or Test Section */}
         {activeTab.includes("Lesson") && (
-          <div className=" flex flex-col items-center">
+          <div className="p-6 flex flex-col items-center">
             {loading ? <p>Loading...</p> : <ChatBox lessonId={lessons[currentLessonIndex]?._id} />}
           </div>
         )}
@@ -76,55 +129,20 @@ const ChatPage: React.FC = () => {
         {activeTab === "Test" && (
           <div className="p-6 flex flex-col items-center">
             <h2 className="text-2xl font-bold mb-4">Test for {lessons[currentLessonIndex]?.title}</h2>
-            <button className="py-3 px-6 bg-greenAccent text-black font-bold rounded-md shadow-md hover:bg-green-400 transition">
-              Start Test
-            </button>
+            {testLoading ? (
+              <p className="text-gray-400">Fetching test...</p>
+            ) : test ? (
+              <TestComponent test={test} />
+            ) : (
+              <button
+                className="py-3 px-6 bg-greenAccent text-black font-bold rounded-md shadow-md hover:bg-green-400 transition"
+                onClick={fetchTest}
+              >
+                Generate Test
+              </button>
+            )}
           </div>
         )}
-      </div>
-
-      {/* Sidebar for Lesson List & Progress */}
-      <div className="w-[450px] bg-customGray shadow-lg border-l border-gray-700 flex flex-col p-4">
-        {/* List of Lessons */}
-        <div className="flex flex-col gap-1">
-          <h3 className="text-lg font-semibold mb-2">Lessons</h3>
-          {loading ? (
-            <p>Loading...</p>
-          ) : lessons.length === 0 ? (
-            <p>No lessons found.</p>
-          ) : (
-            lessons.map((lesson, index) => (
-              <button
-                key={lesson._id}
-                onClick={() => {
-                  setCurrentLessonIndex(index);
-                  setActiveTab(`Lesson ${index + 1}`);
-                }}
-                className={`w-full p-3 text-left rounded-md transition ${
-                  currentLessonIndex === index
-                    ? "bg-greenAccent text-black font-bold"
-                    : "bg-gray-800 text-white hover:bg-gray-700"
-                }`}
-              >
-                {index + 1} - {lesson.title}
-              </button>
-            ))
-          )}
-        </div>
-
-        {/* Progress Bar */}
-        <div className="flex flex-col items-center mb-6">
-          <h3 className="text-lg font-semibold mb-2">Lesson Progress</h3>
-          <div className="w-full bg-gray-700 rounded-full h-4">
-            <div
-              className="bg-greenAccent h-4 rounded-full"
-              style={{ width: `${((currentLessonIndex + 1) / lessons.length) * 100}%` }}
-            />
-          </div>
-          <p className="mt-2 text-sm text-gray-300">
-            {currentLessonIndex + 1} / {lessons.length} Lessons Completed
-          </p>
-        </div>
       </div>
     </div>
   );
