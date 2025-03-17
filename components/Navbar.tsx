@@ -1,9 +1,8 @@
 import Image from "next/image";
 import { auth, signOut, signIn } from "@/auth";
 import Link from "next/link";
-import SearchForm from "@/components/SearchFrom";
 
-const Navbar = async ({ query }: { query?: string }) => {
+const Navbar = async () => {
   const session = await auth();
 
   return (
@@ -22,17 +21,12 @@ const Navbar = async ({ query }: { query?: string }) => {
           </Link>
         </div>
 
-        {/* Center Section - Search Bar */}
-        <div className="flex flex-1 justify-center text-black">
-          <SearchForm query={query} />
-        </div>
-
         {/* Right Section */}
         <div className="flex items-center gap-5">
           {session && session?.user ? (
             <>
-              <Link href="/chatbot">
-                <button className="customBtn01">Button example!!</button>
+              <Link href="/upload">
+                <button className="customBtn01">Learn</button>
               </Link>
 
               <form
