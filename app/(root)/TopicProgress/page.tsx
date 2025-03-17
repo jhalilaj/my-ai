@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import Head from "next/head";
-import TestViewer from "@/components/TestViewer"; // ✅ Import TestViewer component
+import TestViewer from "@/components/TestViewer";
 
 const TopicProgress: React.FC = () => {
   const searchParams = useSearchParams();
@@ -21,55 +21,48 @@ const TopicProgress: React.FC = () => {
     }
   }, [topicId]);
 
-  // ✅ Fetch Topic Details
   const fetchTopic = async () => {
     try {
-      console.log(`🔎 Requesting topic: ${topicId}`);
       const res = await fetch(`/api/topics/get-single?topicId=${topicId}`);
       if (!res.ok) throw new Error("Failed to fetch topic");
       const data = await res.json();
-      console.log("✅ Topic fetched:", data);
       setTopic(data.topic);
     } catch (error) {
       console.error("❌ Error fetching topic:", error);
     }
   };
 
-  // ✅ Fetch Lessons & Past Tests
   const fetchLessons = async () => {
     try {
-      console.log(`🔎 Fetching lessons for topicId: ${topicId}`);
       const res = await fetch(`/api/lesson/get?topicId=${topicId}`);
-
       if (!res.ok) throw new Error(`Failed to fetch lessons. Status: ${res.status}`);
-
       const data = await res.json();
-      console.log(`✅ Fetched ${data.lessons.length} lessons for topicId: ${topicId}`);
 
-      // ✅ Fetch ALL test results for each lesson
       const lessonsWithTests = await Promise.all(
         data.lessons.map(async (lesson: any) => {
           try {
-            console.log(`🔎 Fetching tests for lesson ${lesson._id}...`);
             const testRes = await fetch(`/api/test/results?lessonId=${lesson._id}`);
-
-            if (!testRes.ok) {
-              console.error(`❌ Test fetch failed for lesson ${lesson._id}, Status: ${testRes.status}`);
-              return { ...lesson, tests: [] };
-            }
+            if (!testRes.ok) return { ...lesson, tests: [], avgScore: "0.00" };
 
             const testData = await testRes.json();
-            console.log(`✅ Found ${testData.tests.length} tests for lesson ${lesson._id}:`, testData.tests);
+            const totalTests = testData.tests.length;
 
-            return { ...lesson, tests: testData.success ? testData.tests : [] };
+            let totalPercentage = 0;
+            testData.tests.forEach((test: any) => {
+              if (test.score !== undefined && test.questions?.length > 0) {
+                const testPercentage = (test.score / test.questions.length) * 100;
+                totalPercentage += testPercentage;
+              }
+            });
+
+            const avgScore = totalTests > 0 ? (totalPercentage / totalTests).toFixed(2) : "0.00";
+            return { ...lesson, tests: testData.tests, avgScore };
           } catch (error) {
-            console.error(`❌ Error fetching tests for lesson ${lesson._id}:`, error);
-            return { ...lesson, tests: [] };
+            return { ...lesson, tests: [], avgScore: "0.00" };
           }
         })
       );
 
-      console.log("📋 Final lessons with tests:", lessonsWithTests);
       setLessons(lessonsWithTests);
     } catch (error) {
       console.error("❌ Error fetching lessons:", error);
@@ -78,16 +71,8 @@ const TopicProgress: React.FC = () => {
     }
   };
 
-  // ✅ Calculate Progress
-  const completedLessons = lessons.filter((lesson) => lesson.completed).length;
-  const totalLessons = lessons.length;
-  const averageScore =
-    completedLessons > 0
-      ? Math.round(
-          lessons.reduce((acc, lesson) => acc + (lesson.tests?.length > 0 ? lesson.tests[0].score : 0), 0) /
-            completedLessons
-        )
-      : 0;
+  const totalScoresSum = lessons.reduce((acc, lesson) => acc + (parseFloat(lesson.avgScore) || 0), 0);
+  const overallAverageScore = lessons.length > 0 ? (totalScoresSum / lessons.length).toFixed(2) : "0.00";
 
   if (loading) return <p className="text-white">Loading progress...</p>;
   if (!topic) return <p className="text-red-400">Error: Topic not found.</p>;
@@ -103,14 +88,11 @@ const TopicProgress: React.FC = () => {
 
         {/* Progress Overview */}
         <div className="bg-customGray p-4 rounded-lg shadow-md mb-6">
-          <p className="text-lg font-semibold">Lessons Completed: {completedLessons}/{totalLessons}</p>
-          <p className="text-lg font-semibold">Overall Average Score: {averageScore}%</p>
-
-          {/* Progress Bar */}
+          <p className="text-lg font-semibold">Overall Average Score: {overallAverageScore}%</p>
           <div className="w-full bg-gray-700 rounded-full h-4 mt-2">
             <div
               className="bg-greenAccent h-4 rounded-full"
-              style={{ width: `${(completedLessons / totalLessons) * 100}%` }}
+              style={{ width: `${overallAverageScore}%` }}
             />
           </div>
         </div>
@@ -120,7 +102,7 @@ const TopicProgress: React.FC = () => {
         <div className="space-y-4">
           {lessons.map((lesson) => (
             <div key={lesson._id} className="bg-gray-800 p-4 rounded-lg shadow-md">
-              {/* Lesson Title & Toggle Button */}
+              {/* Lesson Title & Average Score */}
               <div
                 className="flex justify-between items-center cursor-pointer"
                 onClick={() => setExpandedLesson(expandedLesson === lesson._id ? null : lesson._id)}
@@ -128,9 +110,10 @@ const TopicProgress: React.FC = () => {
                 <div>
                   <h3 className="text-lg font-bold">{lesson.title}</h3>
                   <p className="text-sm text-gray-400">
-                    {lesson.tests && lesson.tests.length > 0 
-                      ? `Past Tests: ${lesson.tests.length}` 
-                      : "No tests available"}
+                    {lesson.tests.length > 0 ? `Past Tests: ${lesson.tests.length}` : "No tests available"}
+                  </p>
+                  <p className="text-sm text-green-400 font-semibold">
+                    Average Score: {lesson.avgScore}%
                   </p>
                 </div>
                 <span className="text-greenAccent">{expandedLesson === lesson._id ? "▲" : "▼"}</span>
@@ -156,7 +139,7 @@ const TopicProgress: React.FC = () => {
                         </p>
                         <button
                           className="px-4 py-2 bg-blue-500 text-white font-bold rounded-md hover:bg-blue-400 transition"
-                          onClick={() => setSelectedTest(test)} // ✅ Open TestViewer
+                          onClick={() => setSelectedTest(test)} 
                         >
                           View Test
                         </button>
@@ -170,10 +153,10 @@ const TopicProgress: React.FC = () => {
         </div>
       </div>
 
-      {/* ✅ Render TestViewer if a test is selected */}
+      {/* TestViewer for viewing past tests */}
       {selectedTest && (
         <div className="fixed top-0 left-0 w-full h-full bg-black bg-opacity-50 flex items-center justify-center"
-          onClick={() => setSelectedTest(null)} // ✅ Close when clicking outside
+          onClick={() => setSelectedTest(null)}
         >
           <TestViewer test={selectedTest} onClose={() => setSelectedTest(null)} />
         </div>
