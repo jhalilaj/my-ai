@@ -93,51 +93,81 @@ const ChatPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-customDark text-white flex">
-      
+
       {/* 📌 Sidebar */}
-      <div className="w-[350px] bg-customGray shadow-lg border-r border-gray-700 flex flex-col p-4">
-        
-        {/* 📊 Progress Tracker */}
-        <div className="flex flex-col items-center mb-6">
-          <div className="font-bold text-lg mb-2">Your Progress</div>
-          <div className="w-full bg-gray-800 rounded-full h-6 overflow-hidden">
-            <div className="bg-greenAccent h-6 text-center text-black font-bold leading-6" style={{ width: `${progress}%` }}>
-              {progress}%
+      <div className="w-[350px] bg-customGray shadow-lg border-r border-gray-700 flex flex-col p-4 justify-between">
+        <div>
+          {/* Progress Bar */}
+          <div className="flex flex-col items-center mb-6">
+            <div className="font-bold text-lg mb-2">Your Progress</div>
+            <div className="w-full bg-gray-800 rounded-full h-6 overflow-hidden mb-2">
+              <div className="bg-greenAccent h-6 text-center text-black font-bold leading-6" style={{ width: `${progress}%` }}>
+                {progress}%
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Test Score */}
-        <div className="flex flex-col items-center mb-6">
-          <div className="font-bold text-lg mb-2">Average Test Score</div>
-          <div className="text-2xl font-bold text-greenAccent">
-            {avgTestScore !== null ? `${avgTestScore}%` : "No test taken"}
+          {/* Average Test Score */}
+          <div className="flex flex-col items-center mb-6">
+            <div className="font-bold text-lg mb-2">Average Test Score</div>
+            <div className={`text-2xl font-bold ${avgTestScore !== null ? "text-greenAccent" : "text-gray-400"}`}>
+              {avgTestScore !== null ? `${avgTestScore}%` : "No test taken"}
+            </div>
+          </div>
+
+          {/* Lesson List */}
+          <div className="overflow-y-auto max-h-[350px] pr-2 custom-scrollbar">
+
+            {lessons.map((lesson, index) => (
+              <button
+                key={lesson._id}
+                className={`w-full mb-2 py-2 px-3 rounded-md border font-semibold text-left truncate ${currentLessonIndex === index
+                  ? "border-greenAccent bg-customDark text-greenAccent"
+                  : "border-gray-600 bg-gray-700 hover:bg-gray-600"
+                  }`}
+                title={lesson.title} // show full title on hover
+                onClick={() => {
+                  setCurrentLessonIndex(index);
+                  setActiveTab(`Lesson ${index + 1}`);
+                  setTest(null);
+                  setLessonCompleted(false);
+                }}
+              >
+                {lesson.title}
+              </button>
+            ))}
+          </div>
+
+
+          {/* Complete Lesson Checkbox */}
+          <div className="flex items-center gap-3 mb-4">
+            <input
+              type="checkbox"
+              checked={lessonCompleted}
+              onChange={() => setLessonCompleted(!lessonCompleted)}
+              className="w-6 h-6 cursor-pointer"
+            />
+            <label className="text-white font-bold">Complete Lesson</label>
           </div>
         </div>
 
-        {/* ✅ Complete Lesson Button */}
-        <button 
-          className={`w-full py-3 font-bold rounded-md shadow-md transition ${
-            lessonCompleted ? "bg-gray-500 text-white cursor-not-allowed" : "bg-blue-500 text-white hover:bg-blue-600"
-          }`}
-          onClick={completeLesson}
-          disabled={lessonCompleted}
-        >
-          {lessonCompleted ? "Lesson Completed" : "Complete Lesson"}
-        </button>
-
-        {/* 📝 Take A Test Button */}
+        {/* Take A Test Button */}
         <button
-          className="w-full py-3 bg-greenAccent text-black font-bold rounded-md shadow-md hover:bg-green-400 transition mt-3"
-          onClick={fetchTest}
+          className="w-full py-3 bg-greenAccent text-black font-bold rounded-md shadow-md hover:bg-green-400 transition"
+          onClick={() => {
+            setActiveTab("Test");   // switch to Test tab
+            fetchTest();            // load the test
+          }}
         >
           Take A Test
         </button>
+
       </div>
+
 
       {/* Main Content */}
       <div className="flex flex-col w-full">
-        
+
         {/* Tab Bar for Lessons & Test */}
         <div className="flex gap-2 border-b-2 border-gray-700 p-4 bg-customGray overflow-x-auto">
           {loading ? (
@@ -146,9 +176,8 @@ const ChatPage: React.FC = () => {
             lessons.map((lesson, index) => (
               <button
                 key={lesson._id}
-                className={`px-4 py-2 font-bold ${
-                  activeTab === `Lesson ${index + 1}` ? "border-b-4 border-greenAccent text-greenAccent" : "text-gray-400"
-                }`}
+                className={`px-4 py-2 font-bold ${activeTab === `Lesson ${index + 1}` ? "border-b-4 border-greenAccent text-greenAccent" : "text-gray-400"
+                  }`}
                 onClick={() => {
                   setCurrentLessonIndex(index);
                   setActiveTab(`Lesson ${index + 1}`);
@@ -161,9 +190,8 @@ const ChatPage: React.FC = () => {
             ))
           )}
           <button
-            className={`px-4 py-2 font-bold ${
-              activeTab === "Test" ? "border-b-4 border-greenAccent text-greenAccent" : "text-gray-400"
-            }`}
+            className={`px-4 py-2 font-bold ${activeTab === "Test" ? "border-b-4 border-greenAccent text-greenAccent" : "text-gray-400"
+              }`}
             onClick={() => {
               setActiveTab("Test");
               fetchTest();

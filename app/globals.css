@@ -233,20 +233,21 @@
 
 /* Custom scrollbar styling */
 .custom-scrollbar::-webkit-scrollbar {
-    width: 10px;
+    width: 6px; /* Thinner scrollbar */
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
-    background: #2d2d2d;
-    border-radius: 5px;
+    background: #1f1f1f; /* Dark subtle background */
+    border-radius: 8px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: #4caf50;
-    border-radius: 5px;
+    background: #4ade80; /* Smooth green thumb */
+    border-radius: 10px; /* Fully rounded thumb */
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: #45a049;
+    background: #4ade80; /* Same color on hover for consistency */
 }
+
 
