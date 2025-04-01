@@ -9,7 +9,7 @@ const ChatPage: React.FC = () => {
   const searchParams = useSearchParams();
   const topicId = searchParams.get("topicId");
 
-  const [lessons, setLessons] = useState<{ _id: string; title: string }[]>([]);
+  const [lessons, setLessons] = useState<{ _id: string; title: string; completed: boolean }[]>([]);
   const [currentLessonIndex, setCurrentLessonIndex] = useState(0);
   const [activeTab, setActiveTab] = useState("Lesson 1");
   const [loading, setLoading] = useState(true);
@@ -19,12 +19,22 @@ const ChatPage: React.FC = () => {
   const [progress, setProgress] = useState(67); // Example progress percentage
   const [lessonCompleted, setLessonCompleted] = useState(false);
   const [avgTestScore, setAvgTestScore] = useState<number | null>(null);
+  const [isConfirmingCompletion, setIsConfirmingCompletion] = useState(false); // New state for confirmation popup
 
+  // Fetch lessons when component mounts
   useEffect(() => {
     if (topicId) {
       fetchLessons();
     }
   }, [topicId]);
+
+  // Update the completed status of the current lesson whenever the lesson index changes
+  useEffect(() => {
+    if (lessons.length > 0) {
+      const lesson = lessons[currentLessonIndex];
+      setLessonCompleted(lesson.completed); // Ensure the button reflects completion status whenever lesson changes
+    }
+  }, [lessons, currentLessonIndex]);
 
   const fetchLessons = async () => {
     try {
@@ -34,13 +44,17 @@ const ChatPage: React.FC = () => {
       const data = await res.json();
       setLessons(data.lessons || []);
       setLoading(false);
+
+      // Ensure the state reflects the completed status after fetching lessons
+      if (data.lessons && data.lessons[currentLessonIndex]) {
+        setLessonCompleted(data.lessons[currentLessonIndex].completed);
+      }
     } catch (error) {
       console.error("Error fetching lessons:", error);
       setLoading(false);
     }
   };
 
-  // ✅ Fetch test when "Start Test" is clicked
   const fetchTest = async () => {
     try {
       setTestLoading(true);
@@ -48,7 +62,7 @@ const ChatPage: React.FC = () => {
 
       if (res.status === 404) {
         console.warn("Test not found, generating a new test...");
-        await generateTest(); // ✅ If test not found, generate one
+        await generateTest();
         return;
       }
 
@@ -56,7 +70,7 @@ const ChatPage: React.FC = () => {
 
       const data = await res.json();
       setTest(data.test || null);
-      setAvgTestScore(data.avgScore || null); // Set average test score
+      setAvgTestScore(data.avgScore || null);
     } catch (error) {
       console.error("Error fetching test:", error);
     } finally {
@@ -64,7 +78,6 @@ const ChatPage: React.FC = () => {
     }
   };
 
-  // ✅ Function to Generate a Test
   const generateTest = async () => {
     try {
       setIsGenerating(true);
@@ -86,15 +99,41 @@ const ChatPage: React.FC = () => {
     }
   };
 
-  // ✅ Mark Lesson as Completed
   const completeLesson = () => {
-    setLessonCompleted(true);
+    setIsConfirmingCompletion(true); // Show confirmation popup
+  };
+
+  const confirmCompleteLesson = async () => {
+    // Update the lesson as completed in the database
+    try {
+      const lessonId = lessons[currentLessonIndex]._id;
+      const res = await fetch("/api/lesson/update", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          lessonId,
+          completed: true,
+        }),
+      });
+
+      if (res.ok) {
+        setLessonCompleted(true); // Update the local state to reflect completion
+        setIsConfirmingCompletion(false); // Hide the confirmation popup
+        // Re-fetch lessons to update the completion status
+        await fetchLessons(); // Re-fetch lessons to ensure state is synced
+      } else {
+        console.error("Failed to mark lesson as completed");
+      }
+    } catch (error) {
+      console.error("Error completing lesson:", error);
+    }
   };
 
   return (
     <div className="min-h-screen bg-customDark text-white flex">
-
-      {/* 📌 Sidebar */}
+      {/* Sidebar */}
       <div className="w-[350px] bg-customGray shadow-lg border-r border-gray-700 flex flex-col p-4 justify-between">
         <div>
           {/* Progress Bar */}
@@ -117,7 +156,6 @@ const ChatPage: React.FC = () => {
 
           {/* Lesson List */}
           <div className="overflow-y-auto max-h-[350px] pr-2 custom-scrollbar">
-
             {lessons.map((lesson, index) => (
               <button
                 key={lesson._id}
@@ -125,12 +163,12 @@ const ChatPage: React.FC = () => {
                   ? "border-greenAccent bg-customDark text-greenAccent"
                   : "border-gray-600 bg-gray-700 hover:bg-gray-600"
                   }`}
-                title={lesson.title} // show full title on hover
+                title={lesson.title}
                 onClick={() => {
                   setCurrentLessonIndex(index);
                   setActiveTab(`Lesson ${index + 1}`);
                   setTest(null);
-                  setLessonCompleted(false);
+                  setLessonCompleted(lesson.completed); // Update the button immediately based on the current lesson
                 }}
               >
                 {lesson.title}
@@ -138,16 +176,15 @@ const ChatPage: React.FC = () => {
             ))}
           </div>
 
-
-          {/* Complete Lesson Checkbox */}
-          <div className="flex items-center gap-3 mb-4">
-            <input
-              type="checkbox"
-              checked={lessonCompleted}
-              onChange={() => setLessonCompleted(!lessonCompleted)}
-              className="w-6 h-6 cursor-pointer"
-            />
-            <label className="text-white font-bold">Complete Lesson</label>
+          {/* Complete Lesson Button */}
+          <div className="flex justify-center mt-6">
+            <button
+              className="w-full py-3 bg-greenAccent text-black font-bold rounded-md shadow-md hover:bg-green-400 transition"
+              onClick={completeLesson}
+              disabled={lessonCompleted}
+            >
+              {lessonCompleted ? "Lesson Completed" : "Complete Lesson"}
+            </button>
           </div>
         </div>
 
@@ -155,19 +192,16 @@ const ChatPage: React.FC = () => {
         <button
           className="w-full py-3 bg-greenAccent text-black font-bold rounded-md shadow-md hover:bg-green-400 transition"
           onClick={() => {
-            setActiveTab("Test");   // switch to Test tab
-            fetchTest();            // load the test
+            setActiveTab("Test");
+            fetchTest();
           }}
         >
           Take A Test
         </button>
-
       </div>
-
 
       {/* Main Content */}
       <div className="flex flex-col w-full">
-
         {/* Tab Bar for Lessons & Test */}
         <div className="flex gap-2 border-b-2 border-gray-700 p-4 bg-customGray overflow-x-auto">
           {loading ? (
@@ -176,13 +210,12 @@ const ChatPage: React.FC = () => {
             lessons.map((lesson, index) => (
               <button
                 key={lesson._id}
-                className={`px-4 py-2 font-bold ${activeTab === `Lesson ${index + 1}` ? "border-b-4 border-greenAccent text-greenAccent" : "text-gray-400"
-                  }`}
+                className={`px-4 py-2 font-bold ${activeTab === `Lesson ${index + 1}` ? "border-b-4 border-greenAccent text-greenAccent" : "text-gray-400"}`}
                 onClick={() => {
                   setCurrentLessonIndex(index);
                   setActiveTab(`Lesson ${index + 1}`);
                   setTest(null);
-                  setLessonCompleted(false); // Reset lesson completion when switching
+                  setLessonCompleted(lesson.completed); // Ensure completion status is reflected on lesson change
                 }}
               >
                 Lesson {index + 1}
@@ -190,8 +223,7 @@ const ChatPage: React.FC = () => {
             ))
           )}
           <button
-            className={`px-4 py-2 font-bold ${activeTab === "Test" ? "border-b-4 border-greenAccent text-greenAccent" : "text-gray-400"
-              }`}
+            className={`px-4 py-2 font-bold ${activeTab === "Test" ? "border-b-4 border-greenAccent text-greenAccent" : "text-gray-400"}`}
             onClick={() => {
               setActiveTab("Test");
               fetchTest();
@@ -221,6 +253,30 @@ const ChatPage: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Complete Lesson Confirmation Popup */}
+      {isConfirmingCompletion && (
+        <div className="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg text-black">
+            <h3 className="text-xl font-bold mb-4">Are you sure you want to complete this lesson?</h3>
+            {avgTestScore !== null && <p className="mb-4">Your average test score is: {avgTestScore}%</p>}
+            <div className="flex justify-between">
+              <button
+                onClick={confirmCompleteLesson}
+                className="px-4 py-2 bg-green-500 text-white font-bold rounded-md"
+              >
+                Yes, Complete
+              </button>
+              <button
+                onClick={() => setIsConfirmingCompletion(false)}
+                className="px-4 py-2 bg-gray-500 text-white font-bold rounded-md"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
