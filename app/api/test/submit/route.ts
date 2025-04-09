@@ -81,6 +81,9 @@ ${userAnswer}
 Evaluate how accurate the student's answer is. Provide:
 - feedback (1-2 sentences)
 - a score from 0 to 10
+- If the student didn't know the answer, show the correct answer and explain it.
+- If the student provided a partial answer, point out what they missed and explain why it's important.
+- If the student gave a correct answer, point out the strengths of their answer.
 
 Respond ONLY in this JSON format:
 {
