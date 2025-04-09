@@ -5,8 +5,7 @@ import Lesson from "@/models/Lesson";
 import OpenAI from "openai";
 
 const openai = new OpenAI({
-  apiKey: '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',
-
+  apiKey: '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', // Replace with your actual OpenAI API key
 });
 
 export async function POST(req: Request) {
@@ -15,13 +14,16 @@ export async function POST(req: Request) {
   try {
     const { lessonId } = await req.json();
 
+    // Check if lessonId is missing
     if (!lessonId) {
+      console.error("❌ Missing lessonId");
       return NextResponse.json({ error: "Missing lessonId" }, { status: 400 });
     }
 
     // ✅ Check if Lesson Exists
     const lesson = await Lesson.findById(lessonId);
     if (!lesson) {
+      console.error("❌ Lesson not found for lessonId:", lessonId);
       return NextResponse.json({ error: "Lesson not found" }, { status: 404 });
     }
 
@@ -68,6 +70,7 @@ Example:
     });
 
     let rawResponse = response.choices[0]?.message?.content || "[]";
+    console.log("Raw AI Response:", rawResponse); // Log the raw response
 
     // ✅ Clean response
     rawResponse = rawResponse.replace(/```json|```/g, "").trim();
@@ -80,7 +83,9 @@ Example:
       return NextResponse.json({ error: "Invalid AI response format" }, { status: 500 });
     }
 
-    if (!Array.isArray(parsedTest)) {
+    // Ensure the parsed response is in the correct format
+    if (!Array.isArray(parsedTest) || parsedTest.length !== 4) {
+      console.error("❌ Invalid AI response format:", parsedTest);
       return NextResponse.json({ error: "Failed to generate valid test" }, { status: 500 });
     }
 

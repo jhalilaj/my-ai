@@ -1,14 +1,16 @@
-"use client";
 import React from "react";
 
 interface TestViewerProps {
   test: {
     _id: string;
-    lessonId: string;
-    questions: { question: string; options: string[] }[];
-    correctAnswers: number[];
-    userAnswers?: number[];
-    score?: number;
+    questions: {
+      type: string; question: string; options: string[] 
+}[];
+    correctAnswers: (string | null)[];
+    userAnswers: (string | number | null)[];
+    feedback: { index: number; feedback: string; score: number }[];
+    score: number;
+    percentage: number;
   };
   onClose: () => void;
 }
@@ -35,44 +37,63 @@ const TestViewer: React.FC<TestViewerProps> = ({ test, onClose }) => {
         </div>
 
         {/* Test Score */}
-        <p>🏆 Score:
-          {typeof test.score === "number" && test.questions?.length
-            ? `${((test.score / test.questions.length) * 100).toFixed(2)}%`
-            : "Not taken yet"}
-        </p>
-
-
+        <p>🏆 Score: {test.score} / 100</p>
+        <p>📊 Percentage: {test.percentage.toFixed(2)}%</p>
 
         {/* Questions & Answers */}
         <div className="mt-4 space-y-6">
-          {test.questions.map((q, qIndex) => (
-            <div key={qIndex} className="p-4 bg-gray-800 rounded-lg">
-              <p className="font-semibold">{q.question}</p>
-              <div className="mt-2 space-y-2">
-                {q.options.map((option, oIndex) => {
-                  const isCorrect = test.correctAnswers[qIndex] === oIndex;
-                  const isUserAnswer =
-                    test.userAnswers && test.userAnswers[qIndex] === oIndex;
-                  const isWrong = isUserAnswer && !isCorrect;
+          {test.questions.map((q, qIndex) => {
+            const userAnswer = test.userAnswers[qIndex];
+            const feedback = test.feedback.find((f) => f.index === qIndex);
+            const isCorrect = test.correctAnswers[qIndex] === userAnswer;
 
-                  return (
-                    <div
-                      key={oIndex}
-                      className={`p-2 rounded-md font-semibold flex items-center 
-                        ${isCorrect ? "bg-green-600 text-white" : ""}
-                        ${isWrong ? "bg-red-600 text-white" : ""}
-                        ${!isCorrect && !isWrong ? "bg-gray-700" : ""}
-                      `}
-                    >
-                      {option} {/* ✅ Removed A. B. C. D. Labels */}
-                      {isCorrect && " ✅"}
-                      {isWrong && " ❌"}
-                    </div>
-                  );
-                })}
+            return (
+              <div key={qIndex} className="p-4 bg-gray-800 rounded-lg">
+                <p className="font-semibold">{q.question}</p>
+                <div className="mt-2 space-y-2">
+                  {q.options?.map((option, oIndex) => {
+                    const isUserAnswer = userAnswer === oIndex;
+
+                    return (
+                      <div
+                        key={oIndex}
+                        className={`p-2 rounded-md font-semibold flex items-center
+                          ${isCorrect && isUserAnswer ? "bg-green-600 text-white" : ""}
+                          ${!isCorrect && isUserAnswer ? "bg-red-600 text-white" : ""}
+                          ${!isUserAnswer ? "bg-gray-700" : ""}
+                        `}
+                      >
+                        {option}
+                        {isCorrect && isUserAnswer && " ✅"}
+                        {!isCorrect && isUserAnswer && " ❌"}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Display User Answer for Theory and Practical */}
+                {(q.type === "theory" || q.type === "practical") && (
+                  <div className="mt-4">
+                    <p className="text-sm text-blue-400">
+                      <strong>Your Answer:</strong> {userAnswer || "No answer provided"}
+                    </p>
+                  </div>
+                )}
+
+                {/* Show feedback for theory and practical questions */}
+                {feedback && (
+                  <div className="mt-4">
+                    <p className="text-sm text-blue-400">
+                      <strong>Feedback:</strong> {feedback.feedback}
+                    </p>
+                    <p className="text-sm text-yellow-400">
+                      <strong>Score:</strong> {feedback.score} / 10
+                    </p>
+                  </div>
+                )}
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>

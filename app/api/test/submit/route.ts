@@ -49,7 +49,7 @@ export async function POST(req: Request) {
 
     // ✅ Calculate MCQ score
     let score = 0;
-    const mcqWeight = 1;
+    const mcqWeight = 5;
     const theoryAndPracticalFeedback: any[] = [];
 
     for (let i = 0; i < test.questions.length; i++) {

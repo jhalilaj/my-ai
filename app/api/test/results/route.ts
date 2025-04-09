@@ -21,6 +21,7 @@ export async function GET(req: Request) {
 
     if (!tests || tests.length === 0) {
       console.warn(`⚠️ No tests found for lessonId: ${lessonId}`);
+      return NextResponse.json({ success: true, tests: [], message: "No tests available" });
     } else {
       console.log(`✅ Found ${tests.length} tests for lessonId: ${lessonId}`);
     }

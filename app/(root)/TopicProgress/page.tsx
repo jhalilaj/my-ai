@@ -49,13 +49,12 @@ const TopicProgress: React.FC = () => {
 
             let totalPercentage = 0;
             testData.tests.forEach((test: any) => {
-              if (test.score !== undefined && test.questions?.length > 0) {
-                const testPercentage = (test.score / test.questions.length) * 100;
-                totalPercentage += testPercentage;
-              }
+              const testPercentage = test.percentage || 0;
+              totalPercentage += testPercentage;
             });
 
             const avgScore = totalTests > 0 ? (totalPercentage / totalTests).toFixed(2) : "0.00";
+
             return { ...lesson, tests: testData.tests, avgScore };
           } catch (error) {
             return { ...lesson, tests: [], avgScore: "0.00" };
@@ -71,8 +70,13 @@ const TopicProgress: React.FC = () => {
     }
   };
 
-  const totalScoresSum = lessons.reduce((acc, lesson) => acc + (parseFloat(lesson.avgScore) || 0), 0);
-  const overallAverageScore = lessons.length > 0 ? (totalScoresSum / lessons.length).toFixed(2) : "0.00";
+  const totalScoresSum = lessons.reduce(
+    (acc, lesson) => acc + (parseFloat(lesson.avgScore) || 0),
+    0
+  );
+
+  const overallAverageScore =
+    lessons.length > 0 ? (totalScoresSum / lessons.length).toFixed(2) : "0.00";
 
   if (loading) return <p className="text-white">Loading progress...</p>;
   if (!topic) return <p className="text-red-400">Error: Topic not found.</p>;
@@ -125,21 +129,17 @@ const TopicProgress: React.FC = () => {
                   <h4 className="text-lg font-bold mb-2">Past Test Results:</h4>
                   <div className="space-y-2">
                     {lesson.tests.map((test: any, index: number) => (
-                      <div 
-                        key={test._id || index} 
-                        className="bg-gray-600 p-3 rounded-md flex justify-between items-center"
-                      >
+                      <div key={test._id || index} className="bg-gray-600 p-3 rounded-md flex justify-between items-center">
                         <p className="flex items-center text-sm">
                           📅 {test.createdAt ? new Date(test.createdAt).toLocaleDateString() : "Unknown"}
                         </p>
                         <p className="flex items-center text-sm">
-                          ✅ Score: {test.score !== undefined && test.questions?.length 
-                            ? `${((test.score / test.questions.length) * 100).toFixed(2)}%` 
-                            : "Not taken yet"}
+                          ✅ Percentage: {test.percentage !== undefined ? `${test.percentage.toFixed(1)}%` : "Not taken yet"}
                         </p>
+
                         <button
                           className="px-4 py-2 bg-blue-500 text-white font-bold rounded-md hover:bg-blue-400 transition"
-                          onClick={() => setSelectedTest(test)} 
+                          onClick={() => setSelectedTest(test)}
                         >
                           View Test
                         </button>
@@ -155,7 +155,8 @@ const TopicProgress: React.FC = () => {
 
       {/* TestViewer for viewing past tests */}
       {selectedTest && (
-        <div className="fixed top-0 left-0 w-full h-full bg-black bg-opacity-50 flex items-center justify-center"
+        <div
+          className="fixed top-0 left-0 w-full h-full bg-black bg-opacity-50 flex items-center justify-center"
           onClick={() => setSelectedTest(null)}
         >
           <TestViewer test={selectedTest} onClose={() => setSelectedTest(null)} />
