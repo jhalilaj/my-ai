@@ -7,14 +7,14 @@ import { useRouter } from "next/navigation";
 export default function UploadPage() {
   const { data: session } = useSession();
   const router = useRouter();
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [lessonTopic, setLessonTopic] = useState("");
   const [teachingStyle, setTeachingStyle] = useState("Simple");
   const [uploading, setUploading] = useState(false);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files) {
-      setSelectedFile(event.target.files[0]);
+      setSelectedFiles(Array.from(event.target.files));
     }
   };
 
@@ -25,37 +25,37 @@ export default function UploadPage() {
     }
 
     setUploading(true);
-    let fileId = null;
-    let fileContent = null;
+    let fileIds: string[] = [];
+    let filePaths: string[] = [];
     let topicId = null;
 
     try {
-      // ✅ Step 1: Upload File if Selected
-      if (selectedFile) {
-        const formData = new FormData();
-        formData.append("file", selectedFile);
+      // ✅ Step 1: Upload All Files
+      if (selectedFiles.length > 0) {
+        for (const file of selectedFiles) {
+          const formData = new FormData();
+          formData.append("file", file);
 
-        console.log("📤 Uploading file...");
-        const uploadRes = await fetch("/api/upload", {
-          method: "POST",
-          body: formData,
-        });
+          console.log("📤 Uploading file:", file.name);
+          const uploadRes = await fetch("/api/upload", {
+            method: "POST",
+            body: formData,
+          });
 
-        const uploadData = await uploadRes.json();
-        if (!uploadRes.ok || !uploadData.success) {
-          alert("Error uploading file.");
-          setUploading(false);
-          return;
+          const uploadData = await uploadRes.json();
+          if (!uploadRes.ok || !uploadData.success) {
+            alert(`Error uploading file: ${file.name}`);
+            continue;
+          }
+
+          fileIds.push(uploadData.fileId);
+          filePaths.push(uploadData.filePath);
+          console.log("✅ File uploaded:", uploadData.fileId);
         }
-
-        fileId = uploadData.fileId;
-        fileContent = uploadData.filePath; // ✅ Extracted file text
-
-        console.log("✅ File uploaded successfully:", fileId);
       }
 
-      if (!lessonTopic && !fileId) {
-        alert("Please enter a topic title or upload a file.");
+      if (!lessonTopic && filePaths.length === 0) {
+        alert("Please enter a topic or upload at least one file.");
         setUploading(false);
         return;
       }
@@ -68,12 +68,12 @@ export default function UploadPage() {
         body: JSON.stringify({
           topicTitle: lessonTopic || "Untitled Topic",
           teachingStyle,
-          fileId,
+          fileId: fileIds, // 🔁 Pass multiple file IDs
         }),
       });
 
       const topicData = await topicRes.json();
-      console.log("📥 Topic API Response:", topicData); // ✅ Debugging log
+      console.log("📥 Topic API Response:", topicData);
 
       if (!topicRes.ok || !topicData.topicId) {
         alert("Error creating topic.");
@@ -88,24 +88,18 @@ export default function UploadPage() {
       const depth = teachingStyle === "Simple" ? 3 : teachingStyle === "Intermediate" ? 5 : 10;
       console.log("📚 Generating lessons...");
 
-      console.log("📤 Sending Request to /api/lesson/generate:", {
-        topicId,
-        content: fileContent || lessonTopic,
-        depth,
-      });
-
       const lessonRes = await fetch("/api/lesson/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           topicId,
-          content: fileContent || lessonTopic,
+          content: filePaths.length > 0 ? filePaths : lessonTopic,
           depth,
         }),
       });
 
       const lessonData = await lessonRes.json();
-      console.log("📥 Lesson API Response:", lessonData); // ✅ Debugging log
+      console.log("📥 Lesson API Response:", lessonData);
 
       if (!lessonRes.ok || !lessonData.success) {
         alert("Error generating lessons.");
@@ -115,7 +109,7 @@ export default function UploadPage() {
 
       console.log("✅ Lessons Generated:", lessonData.lessons);
 
-      // ✅ Step 4: Redirect to Chat Page with Topic
+      // ✅ Step 4: Redirect to Chat Page
       router.push(`/chatbot?topicId=${topicId}&lesson=lesson1`);
     } catch (error) {
       console.error("❌ Error generating lessons:", error);
@@ -132,8 +126,13 @@ export default function UploadPage() {
 
         {/* File Upload Section */}
         <div className="mb-4">
-          <label className="block text-sm font-medium mb-1">Choose a File (PDF/DOCX)</label>
-          <input type="file" onChange={handleFileChange} className="w-full text-white bg-gray-700 p-2 rounded-md" />
+          <label className="block text-sm font-medium mb-1">Choose Files (PDF/DOCX)</label>
+          <input
+            type="file"
+            multiple
+            onChange={handleFileChange}
+            className="w-full text-white bg-gray-700 p-2 rounded-md"
+          />
         </div>
 
         {/* Text Input for Lesson Topic */}

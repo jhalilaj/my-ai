@@ -5,7 +5,8 @@ import Lesson from "@/models/Lesson";
 import OpenAI from "openai";
 
 const openai = new OpenAI({
-  apiKey: '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',
+  apiKey: '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',
+
 });
 
 export async function POST(req: Request) {
@@ -26,14 +27,40 @@ export async function POST(req: Request) {
 
     // ✅ Generate test using AI
     const prompt = `
-      Generate a test for the following lesson:
-      ${lesson.content}
-      Format the response as JSON array:
-      [
-        { "question": "Question 1", "options": ["A", "B", "C", "D"], "correctAnswer": "A" },
-        { "question": "Question 2", "options": ["A", "B", "C", "D"], "correctAnswer": "B" }
-      ]
-    `;
+Generate a test for the following lesson:
+${lesson.content}
+
+Include a mix of:
+- Multiple Choice Questions (2)
+- Theoretical Questions (1)
+- Practical Questions (1)
+
+Return the test as a JSON array. Each object must include:
+- "type": "mcq" | "theory" | "practical"
+- "question": the actual question
+- "options": (only for mcq, an array of 4 options)
+- "correctAnswer": "A"/"B"/"C"/"D" for mcq, or a sample answer for theory/practical
+
+Example:
+[
+  {
+    "type": "mcq",
+    "question": "What is 2+2?",
+    "options": ["3", "4", "5", "6"],
+    "correctAnswer": "B"
+  },
+  {
+    "type": "theory",
+    "question": "Explain the concept of inheritance in OOP.",
+    "correctAnswer": "Inheritance allows one class to inherit properties and methods from another."
+  },
+  {
+    "type": "practical",
+    "question": "Write a Python function to return the square of a number.",
+    "correctAnswer": "def square(n): return n * n"
+  }
+]
+    `.trim();
 
     const response = await openai.chat.completions.create({
       model: "gpt-4o",
@@ -42,14 +69,14 @@ export async function POST(req: Request) {
 
     let rawResponse = response.choices[0]?.message?.content || "[]";
 
-    // ✅ Remove unwanted backticks and spaces
+    // ✅ Clean response
     rawResponse = rawResponse.replace(/```json|```/g, "").trim();
 
     let parsedTest;
     try {
       parsedTest = JSON.parse(rawResponse);
     } catch (error) {
-      console.error("AI Response Parsing Error:", error);
+      console.error("❌ AI Response Parsing Error:", error);
       return NextResponse.json({ error: "Invalid AI response format" }, { status: 500 });
     }
 
@@ -57,23 +84,25 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Failed to generate valid test" }, { status: 500 });
     }
 
+    // ✅ Save Test to DB
     const test = new Test({
       lessonId,
       questions: parsedTest.map((q: any) => ({
+        type: q.type,
         question: q.question,
-        options: q.options,
+        options: q.options || [],
+        correctAnswer: q.correctAnswer,
       })),
       correctAnswers: parsedTest.map((q: any) => {
-        return ["A", "B", "C", "D"].indexOf(q.correctAnswer); // Convert A/B/C/D → 0/1/2/3
+        return q.type === "mcq" ? ["A", "B", "C", "D"].indexOf(q.correctAnswer) : null;
       }),
     });
-
 
     await test.save();
 
     return NextResponse.json({ success: true, test });
   } catch (error) {
-    console.error("Test Generation Error:", error);
+    console.error("❌ Test Generation Error:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

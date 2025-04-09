@@ -2,7 +2,8 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { useSession } from "next-auth/react";
-import ReactMarkdown from "react-markdown"; // ✅ Import Markdown Renderer
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm"; // ✅ GitHub-style markdown support
 
 interface ChatBoxProps {
   lessonId: string;
@@ -30,12 +31,10 @@ const ChatBox: React.FC<ChatBoxProps> = ({ lessonId, fileContent }) => {
     }
   }, [session, lessonId]);
 
-  // ✅ Fetch lesson content from API
   const fetchLessonContent = async () => {
     try {
       const res = await fetch(`/api/lesson/get-single?lessonId=${lessonId}`);
       if (!res.ok) throw new Error(`Failed to fetch lesson content. Status: ${res.status}`);
-
       const data = await res.json();
       setLessonContent(data.lesson?.content || "Lesson content not available.");
     } catch (error) {
@@ -43,12 +42,10 @@ const ChatBox: React.FC<ChatBoxProps> = ({ lessonId, fileContent }) => {
     }
   };
 
-  // ✅ Fetch previous chat history from the database
   const fetchChats = async () => {
     try {
       const res = await fetch(`/api/chat/get?lessonId=${lessonId}`);
       if (!res.ok) throw new Error(`Failed to fetch chats. Status: ${res.status}`);
-
       const data = await res.json();
       if (data.chats) {
         const formattedChats = data.chats.map((msg: { role: string; content: string }) => ({
@@ -80,7 +77,6 @@ const ChatBox: React.FC<ChatBoxProps> = ({ lessonId, fileContent }) => {
         prompt += `${msg.sender}: ${msg.text}\n`;
       });
 
-      // ✅ Include lesson content in AI prompt
       if (lessonContent) {
         prompt += `\nLesson Content:\n${lessonContent}\n\n`;
       }
@@ -97,13 +93,10 @@ const ChatBox: React.FC<ChatBoxProps> = ({ lessonId, fileContent }) => {
 
       const data = await res.json();
       let botResponse = data.message || "Error fetching response.";
-
       const newBotMessage = { role: "assistant", content: botResponse };
 
       setChatHistory((prev) => [...prev, { sender: "Bot", text: botResponse }]);
 
-
-      // ✅ Save conversation history in MongoDB
       await fetch("/api/chat/save", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -136,22 +129,29 @@ const ChatBox: React.FC<ChatBoxProps> = ({ lessonId, fileContent }) => {
         className="flex-grow overflow-y-auto p-6 text-gray-300 rounded-md min-h-[60vh] sm:min-h-[65vh] lg:min-h-[75vh] custom-scrollbar bg-gray-900"
       >
         <div className="space-y-6">
-          {/* ✅ Render Lesson Content with Markdown */}
+          {/* ✅ Render Lesson Content */}
           {lessonContent && (
             <div className="bg-gray-800 p-4 rounded-md mb-4 text-white">
-              <h2 className="font-bold text-lg">Lesson Content:</h2>
-              <ReactMarkdown className="prose prose-invert">{lessonContent}</ReactMarkdown>
+              <h2 className="font-bold text-lg mb-2">Lesson Content:</h2>
+              <ReactMarkdown className="prose prose-invert max-w-none" remarkPlugins={[remarkGfm]}>
+                {lessonContent}
+              </ReactMarkdown>
             </div>
           )}
 
-          {/* ✅ Render Chat Messages with Markdown Support */}
+          {/* ✅ Chat Messages */}
           {chatHistory.map((msg, index) => (
-            <div key={index} className="whitespace-pre-wrap break-words">
-              <span className={`font-semibold ${msg.sender === "You" ? "text-greenAccent" : "text-white"}`}>
-                {msg.sender}:
-              </span>{" "}
-              <ReactMarkdown className="prose prose-invert">{msg.text || ""}</ReactMarkdown>
+            <div key={index} className="mb-6">
+            <p className={`font-semibold mb-1 ${msg.sender === "You" ? "text-greenAccent" : "text-white"}`}>
+              {msg.sender}:
+            </p>
+            <div className="prose prose-invert max-w-none">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                {msg.text || ""}
+              </ReactMarkdown>
             </div>
+          </div>
+          
           ))}
         </div>
       </div>

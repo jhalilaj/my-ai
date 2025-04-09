@@ -7,7 +7,8 @@ interface ITopic extends Document {
   totalLessons: number;
   completedLessons: number;
   averageScore: number;
-  lessons: string[]; // Array of lesson IDs
+  lessons: string[];
+  fileIds?: string[]; // ✅ Multiple file references
 }
 
 const TopicSchema = new Schema<ITopic>({
@@ -17,7 +18,8 @@ const TopicSchema = new Schema<ITopic>({
   totalLessons: { type: Number, required: true },
   completedLessons: { type: Number, default: 0 },
   averageScore: { type: Number, default: 0 },
-  lessons: [{ type: String }], // List of lesson IDs
+  lessons: [{ type: String }],
+  fileIds: [{ type: String }], // ✅ New field
 });
 
 export default mongoose.models.Topic || mongoose.model<ITopic>("Topic", TopicSchema);

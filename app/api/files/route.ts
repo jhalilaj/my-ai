@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import mongoose from "mongoose";
 import { auth } from "@/auth"; // Use auth() for NextAuth session
+import File from "@/models/File"; // ✅ import from correct location
 
 const FileSchema = new mongoose.Schema({
   userId: { type: String, required: true },
