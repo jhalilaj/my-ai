@@ -16,6 +16,7 @@ const ChatBox: React.FC<ChatBoxProps> = ({ lessonId, fileContent }) => {
   const [chatHistory, setChatHistory] = useState<{ sender: string; text?: string; image?: string }[]>([]);
   const [loading, setLoading] = useState(false);
   const [lessonContent, setLessonContent] = useState<string | null>(null);
+  const [isTyping, setIsTyping] = useState(false); // Track typing status
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -70,6 +71,7 @@ const ChatBox: React.FC<ChatBoxProps> = ({ lessonId, fileContent }) => {
     setChatHistory((prev) => [...prev, { sender: "You", text: message }]);
     setMessage("");
     setLoading(true);
+    setIsTyping(true); // Show typing animation
 
     try {
       let prompt = `Previous conversation:\n`;
@@ -97,6 +99,7 @@ const ChatBox: React.FC<ChatBoxProps> = ({ lessonId, fileContent }) => {
 
       setChatHistory((prev) => [...prev, { sender: "Bot", text: botResponse }]);
 
+      // Save chat history to the database
       await fetch("/api/chat/save", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -111,6 +114,7 @@ const ChatBox: React.FC<ChatBoxProps> = ({ lessonId, fileContent }) => {
       setChatHistory((prev) => [...prev, { sender: "Bot", text: "Network error." }]);
     } finally {
       setLoading(false);
+      setIsTyping(false); // Hide typing animation once the bot responds
     }
   };
 
@@ -122,16 +126,16 @@ const ChatBox: React.FC<ChatBoxProps> = ({ lessonId, fileContent }) => {
   };
 
   return (
-    <div className="flex flex-col h-[70vh] w-full bg-customDark text-white rounded-lg shadow-lg">
+    <div className="flex flex-col h-[100vh] w-full text-white rounded-lg shadow-lg">
       {/* Chat Display */}
       <div
         ref={chatContainerRef}
-        className="flex-grow overflow-y-auto p-6 text-gray-300 rounded-md min-h-[60vh] sm:min-h-[65vh] lg:min-h-[75vh] custom-scrollbar bg-gray-900"
+        className="flex-grow overflow-y-auto p-6 text-gray-300 rounded-md min-h-[60vh] sm:min-h-[65vh] lg:min-h-[75vh] custom-scrollbar bg-darkgreen"
       >
         <div className="space-y-6">
-          {/* ✅ Render Lesson Content */}
+          {/* Render Lesson Content */}
           {lessonContent && (
-            <div className="bg-gray-800 p-4 rounded-md mb-4 text-white">
+            <div className="bg-darkgreen p-4 rounded-md mb-4 text-white">
               <h2 className="font-bold text-lg mb-2">Lesson Content:</h2>
               <ReactMarkdown className="prose prose-invert max-w-none" remarkPlugins={[remarkGfm]}>
                 {lessonContent}
@@ -139,25 +143,31 @@ const ChatBox: React.FC<ChatBoxProps> = ({ lessonId, fileContent }) => {
             </div>
           )}
 
-          {/* ✅ Chat Messages */}
+          {/* Chat Messages */}
           {chatHistory.map((msg, index) => (
             <div key={index} className="mb-6">
-            <p className={`font-semibold mb-1 ${msg.sender === "You" ? "text-greenAccent" : "text-white"}`}>
-              {msg.sender}:
-            </p>
-            <div className="prose prose-invert max-w-none">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                {msg.text || ""}
-              </ReactMarkdown>
+              <p className={`font-semibold mb-1 ${msg.sender === "You" ? "text-greenAccent" : "text-white"}`}>
+                {msg.sender}:
+              </p>
+              <div className="prose prose-invert max-w-none">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  {msg.text || ""}
+                </ReactMarkdown>
+              </div>
             </div>
-          </div>
-          
           ))}
+
+          {/* Show "AI is typing..." animation */}
+          {isTyping && (
+            <div className="font-semibold text-gray-400 mb-6">
+              <p className="typing-animation">AI-Tutor: </p>
+            </div>
+          )}
         </div>
       </div>
 
       {/* Input Section */}
-      <div className="p-5 bg-gray-800 rounded-b-lg">
+      <div className="p-5 bg-darkgreen rounded-b-lg">
         <div className="relative flex items-center">
           <input
             type="text"

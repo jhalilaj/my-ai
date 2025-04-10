@@ -251,3 +251,51 @@
 }
 
 
+/* Add this to your global CSS or use Tailwind classes for transitions */
+
+.transition-all {
+    transition: all 0.3s ease;
+  }
+  
+  .sidebar-hidden {
+    transform: translateX(-100%); /* Sidebar will slide out */
+  }
+  
+  .sidebar-visible {
+    transform: translateX(0); /* Sidebar will slide in */
+  }
+  
+
+/* Typing animation for AI Tutor */
+.typing-animation::after {
+    content: "Typing";
+    display: inline-block;
+    font-weight: bold;
+    color: #bbb;
+    animation: typingDots 1.5s steps(5, end) infinite;
+}
+
+@keyframes typingDots {
+    0% { content: "Typing."; }
+    25% { content: "Typing.."; }
+    50% { content: "Typing..."; }
+    75% { content: "Typing.."; }
+    100% { content: "Typing."; }
+}
+
+/* Fetching Animation */
+.fetching-animation::after {
+    content: "Fetching your test results";
+    display: inline-block;
+    font-weight: bold;
+    color: #bbb;
+    animation: fetchingDots 1.5s steps(5, end) infinite;
+}
+
+@keyframes fetchingDots {
+    0% { content: "Fetching your test results."; }
+    25% { content: "Fetching your test results.."; }
+    50% { content: "Fetching your test results..."; }
+    75% { content: "Fetching your test results.."; }
+    100% { content: "Fetching your test results."; }
+}

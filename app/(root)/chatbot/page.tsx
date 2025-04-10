@@ -19,6 +19,7 @@ const ChatPage: React.FC = () => {
   const [progress, setProgress] = useState(67);
   const [avgTestScore, setAvgTestScore] = useState<number | null>(null);
   const [isConfirmingCompletion, setIsConfirmingCompletion] = useState(false);
+  const [isSidebarVisible, setIsSidebarVisible] = useState(true);  // Track sidebar visibility
 
   useEffect(() => {
     if (topicId) {
@@ -107,13 +108,23 @@ const ChatPage: React.FC = () => {
     }
   };
 
+  const toggleSidebar = () => {
+    setIsSidebarVisible(!isSidebarVisible);  // Toggle the sidebar visibility
+  };
+
   return (
-    <div className="min-h-screen bg-customDark text-white flex">
+    <div className="h-screen bg-customDark text-white flex">
       {/* Sidebar */}
-      <div className="w-[350px] bg-customGray shadow-lg border-r border-gray-700 flex flex-col p-4 justify-between">
+      <div
+        className={`w-[350px] bg-customGray shadow-lg border-r border-gray-700 flex flex-col p-4 justify-between flex-grow-0 transition-all ${isSidebarVisible ? "translate-x-0" : "-translate-x-full"}`}
+      >
+        {/* Sidebar Toggle Button */}
+
+
         <div>
           {/* Progress Bar */}
-          <div className="flex flex-col items-center mb-6">
+          <div className="pt-2 flex flex-col items-center mb-6">
+
             <div className="font-bold text-lg mb-2">Your Progress</div>
             <div className="w-full bg-gray-800 rounded-full h-6 overflow-hidden mb-2">
               <div
@@ -185,46 +196,18 @@ const ChatPage: React.FC = () => {
       </div>
 
       {/* Main Content */}
-      <div className="flex flex-col w-full">
-        {/* Tab Bar */}
-        <div className="flex gap-2 border-b-2 border-gray-700 p-4 bg-customGray overflow-x-auto">
-          {loading ? (
-            <p>Loading Lessons...</p>
-          ) : (
-            lessons.map((lesson, index) => (
-              <button
-                key={lesson._id}
-                className={`px-4 py-2 font-bold ${
-                  activeTab === `Lesson ${index + 1}`
-                    ? "border-b-4 border-greenAccent text-greenAccent"
-                    : "text-gray-400"
-                }`}
-                onClick={() => {
-                  setCurrentLessonIndex(index);
-                  setActiveTab(`Lesson ${index + 1}`);
-                  setTest(null);
-                }}
-              >
-                Lesson {index + 1}
-              </button>
-            ))
-          )}
-          <button
-            className={`px-4 py-2 font-bold ${
-              activeTab === "Test" ? "border-b-4 border-greenAccent text-greenAccent" : "text-gray-400"
-            }`}
-            onClick={() => {
-              setActiveTab("Test");
-              fetchTest();
-            }}
-          >
-            Test
-          </button>
-        </div>
+      <div className={`flex-1 flex flex-col h-full transition-all ${isSidebarVisible ? "ml-[0px]" : "ml-[-300]"}`}>
+        {/* Button to toggle sidebar */}
+        <button
+          onClick={toggleSidebar}
+          className="absolute top-32 left-5 text-white bg-greenAccent rounded-full w-8 h-8 flex items-center justify-center z-10"
+        >
+          {isSidebarVisible ? "X" : "≡"}
+        </button>
 
         {/* Lesson or Test Section */}
         {activeTab.includes("Lesson") && (
-          <div className="p-6 flex flex-col items-center">
+          <div className="flex-1 flex flex-col overflow-y-auto">
             {loading ? <p>Loading...</p> : <ChatBox lessonId={lessons[currentLessonIndex]?._id} />}
           </div>
         )}

@@ -33,6 +33,7 @@ const TestComponent: React.FC<TestComponentProps> = ({ test }) => {
       type: "theory" | "practical";
     }[]
   >([]);
+  const [isTyping, setIsTyping] = useState(false); // Typing indicator state
 
   useEffect(() => {
     const storedAnswers = localStorage.getItem(`answers-${test._id}`);
@@ -62,6 +63,8 @@ const TestComponent: React.FC<TestComponentProps> = ({ test }) => {
       return;
     }
 
+    setIsTyping(true); // Show typing animation while submitting the test
+
     try {
       const res = await fetch("/api/test/submit", {
         method: "POST",
@@ -86,6 +89,8 @@ const TestComponent: React.FC<TestComponentProps> = ({ test }) => {
       }
     } catch (error) {
       setError("Network error. Please try again.");
+    } finally {
+      setIsTyping(false); // Hide typing animation once the test is submitted
     }
   };
 
@@ -122,7 +127,7 @@ const TestComponent: React.FC<TestComponentProps> = ({ test }) => {
   };
 
   return (
-    <div className="w-full max-w-2xl bg-gray-800 p-6 rounded-md shadow-lg text-white">
+    <div className="w-full max-w-2xl bg-gray-800 p-6 rounded-md shadow-lg text-white overflow-auto h-[87vh] custom-scrollbar">
       <h3 className="text-xl font-bold mb-4">Answer the Questions</h3>
       {error && <p className="text-red-500">{error}</p>}
 
@@ -192,6 +197,13 @@ const TestComponent: React.FC<TestComponentProps> = ({ test }) => {
             );
           })}
 
+          {/* Show Typing animation */}
+          {isTyping && (
+            <div className="font-semibold text-gray-400 mb-6">
+              <p className="">AI-Tutor is checking your mark</p>
+            </div>
+          )}
+
           {!submitted ? (
             <button
               onClick={handleSubmit}
@@ -220,4 +232,3 @@ const TestComponent: React.FC<TestComponentProps> = ({ test }) => {
 };
 
 export default TestComponent;
-  

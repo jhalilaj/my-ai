@@ -2,7 +2,7 @@ import OpenAI from 'openai';
 import { NextResponse } from 'next/server';
 
 const openai = new OpenAI({
-  apiKey: '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',
+  apiKey: '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',
 });
 
 
