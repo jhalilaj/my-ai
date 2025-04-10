@@ -60,11 +60,19 @@ export async function POST(req: Request) {
 
     console.log("🧠 Extracted Text Preview:", extractedText.substring(0, 500));
 
-    // ✅ Generate sections
+    // ✅ Generate sections based on content difficulty
     const sectionPrompt = `
-      You are an AI tutor. Analyze the following topic and divide it into ${depth} major sections that best cover the subject.
-      Topic Content: ${extractedText}
-      Format the response strictly as a JSON array: ["Section 1", "Section 2", ...].
+      You are an AI tutor. Analyze the following content and determine how to split it into multiple sections based on its complexity.
+      If the content is too difficult or complex, split it into more parts with detailed explanations.
+      If the content is simple, divide it into 2-3 parts, providing a concise overview of each.
+
+      Topic Content: 
+      ${extractedText}
+
+      Provide a list of sections where the content will be divided. 
+      Example format: ["Section 1", "Section 2", "Section 3", ...]
+
+      Only return the section list.
     `;
 
     const sectionResponse = await openai.chat.completions.create({
@@ -88,19 +96,20 @@ export async function POST(req: Request) {
 
     console.log(`✅ Sections Generated: ${sections.length}`);
 
-    // ✅ Generate lessons
+    // ✅ Generate lessons for each section
     let lessons = [];
 
     for (let i = 0; i < sections.length; i++) {
       console.log(`📝 Generating Lesson ${i + 1}: ${sections[i]}`);
+
       const lessonPrompt = `
-        You are an expert AI tutor. Generate a full structured lesson on "${sections[i]}" from the given topic content.
+        You are an expert AI tutor. Generate a detailed lesson for the section titled "${sections[i]}" from the given topic content.
         The lesson should include:
-        - Introduction
+        - Introduction to the section
         - Key Concepts
-        - Detailed Explanation
+        - In-depth Explanation
         - Real-world Examples
-        - Summary
+        - Summary and Review
         Topic Content: ${extractedText}
       `;
 
