@@ -54,7 +54,11 @@ const Navbar = async () => {
               </Link>
 
             </>
-          ) : (
+         ) : (
+          <div className="flex gap-3">
+            <Link href="/signup">
+              <button className="customBtn01">Get Started</button>
+            </Link>
             <form
               action={async () => {
                 "use server";
@@ -65,7 +69,9 @@ const Navbar = async () => {
                 Login
               </button>
             </form>
-          )}
+          </div>
+        )
+        }
         </div>
       </nav>
     </header>
