@@ -1,29 +1,62 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Eye, EyeOff } from "lucide-react";
+import { FaGoogle, FaGithub } from "react-icons/fa";
 import { signIn } from "next-auth/react";
-import { Github, Mail } from "lucide-react"; // Optional icon set for consistency
 
 const SignupPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [error, setError] = useState("");
 
   const isMatching = confirmPassword === password && confirmPassword.length > 0;
   const emailIsValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-
   const canSubmit = emailIsValid && password && confirmPassword && isMatching;
+
+  const handleSubmit = async (e: { preventDefault: () => void; }) => {
+    e.preventDefault();
+
+    if (!canSubmit) {
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password, confirmPassword }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        // Redirect to login page if signup is successful
+        window.location.href = "/login";
+      } else {
+        // Show error message from API
+        setError(data.error || "An error occurred");
+      }
+    } catch (err) {
+      setError("Something went wrong. Please try again.");
+    }
+  };
+
+  // Auto-scroll to bottom on mount
+  useEffect(() => {
+    window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+  }, []);
 
   return (
     <main className="min-h-screen flex items-center justify-center bg-primary text-white px-4">
       <div className="w-full max-w-4xl flex flex-col md:flex-row border-4 border-greenAccent rounded-xl shadow-lg overflow-hidden">
-
-        {/* ✅ Left Section */}
+        {/* Left Section */}
         <div className="w-full md:w-1/2 p-8 space-y-6 bg-customDark z-20">
           <h1 className="text-4xl font-bold">
             Join <span className="text-greenAccent">AI Tutor</span>
@@ -31,14 +64,13 @@ const SignupPage = () => {
           <p className="text-lg text-gray-300">
             Sign up to get started with your personal AI-powered tutor. No credit card required.
           </p>
-
           <div className="flex flex-col gap-4">
             <button
               onClick={() => signIn("google")}
               type="button"
               className="flex items-center justify-center gap-2 bg-greenAccent text-black font-semibold py-3 px-6 rounded-md hover:scale-105 transition-all w-full"
             >
-              <Mail size={18} />
+              <FaGoogle />
               Sign up with Google
             </button>
 
@@ -47,11 +79,10 @@ const SignupPage = () => {
               type="button"
               className="flex items-center justify-center gap-2 bg-white text-black font-semibold py-3 px-6 rounded-md hover:scale-105 transition-all w-full"
             >
-              <Github size={18} />
+              <FaGithub />
               Sign up with GitHub
             </button>
           </div>
-
           <p className="text-sm text-gray-400 mt-4">
             Already have an account?{" "}
             <Link href="/login" className="text-greenAccent hover:underline">
@@ -60,14 +91,16 @@ const SignupPage = () => {
           </p>
         </div>
 
-        {/* ✅ Divider with blur */}
+        {/* Divider */}
         <div className="hidden md:block w-[2px] bg-white/20 blur-lg" />
 
-        {/* ✅ Right Section */}
+        {/* Right Section */}
         <div className="w-full md:w-1/2 p-8 bg-white text-black space-y-4 z-20">
           <h2 className="text-2xl font-semibold mb-2">Or sign up with Email</h2>
 
-          <form className="flex flex-col gap-4">
+          {error && <p className="text-red-500">{error}</p>} {/* Display error message */}
+
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <input
               type="email"
               placeholder="Email address"
@@ -77,7 +110,6 @@ const SignupPage = () => {
               required
             />
 
-            {/* Password input with toggle */}
             <div className="relative">
               <input
                 type={showPassword ? "text" : "password"}
@@ -96,7 +128,6 @@ const SignupPage = () => {
               </button>
             </div>
 
-            {/* Confirm password with validation */}
             <div className="relative">
               <input
                 type={showConfirm ? "text" : "password"}
@@ -121,15 +152,12 @@ const SignupPage = () => {
               </button>
             </div>
 
-            {/* Create Account Button + Tooltip */}
             <div className="relative group w-full">
               <button
                 type="submit"
                 disabled={!canSubmit}
                 className={`w-full text-black font-semibold py-3 px-6 rounded-md transition-all ${
-                  canSubmit
-                    ? "bg-greenAccent hover:scale-105"
-                    : "bg-gray-300 cursor-not-allowed"
+                  canSubmit ? "bg-greenAccent hover:scale-105" : "bg-gray-300 cursor-not-allowed"
                 }`}
               >
                 Create Account

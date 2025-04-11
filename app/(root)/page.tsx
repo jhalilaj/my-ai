@@ -1,10 +1,16 @@
+"use client";
+import { FaGoogle, FaGithub, FaUser } from "react-icons/fa";
 import React from "react";
-import { auth, signOut, signIn } from "@/auth";
-
+import { signIn } from "next-auth/react";
+import { Mail, Github, UserPlus } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 export default function Home() {
+    const router = useRouter();
+
     return (
-        <div className="min-h-screen text-white bg-customDark">
+        <div className="min-h-screen text-white bg-customDark custom-scrollbar overflow-y-auto">
+
             {/* Hero Section */}
             <section className="flex flex-col md:flex-row items-center justify-between min-h-screen px-6 bg-customDark">
                 {/* Text Section */}
@@ -18,24 +24,38 @@ export default function Home() {
                     <p className="text-xl mb-6 max-w-2xl mx-auto md:mx-0">
                         Learn faster and more efficiently with your personal AI-powered tutor.
                     </p>
-                    <div className="flex gap-4 justify-center md:justify-start">
+
+
+                    <div className="flex flex-wrap gap-4 justify-center md:justify-start">
+                        {/* Email */}
                         <button
-                            className="px-6 py-3 bg-greenAccent text-black font-bold rounded-lg hover:bg-white hover:text-greenAccent border border-black transition">
+                            onClick={() => router.push("/signup")}
+                            className="flex items-center gap-2 w-[250px] px-6 py-3 bg-white text-black font-bold rounded-lg hover:bg-greenAccent hover:text-black border border-black transition"
+                        >
+                            <FaUser />
+                            Sign up with Email
+                        </button>
+
+                        {/* Google */}
+                        <button
+                            onClick={() => signIn("google")}
+                            className="flex items-center gap-2 w-[250px] px-6 py-3 bg-greenAccent text-black font-bold rounded-lg hover:bg-white hover:text-greenAccent border border-black transition"
+                        >
+                            <FaGoogle />
                             Sign up with Google
                         </button>
-                        <form
-                            action={async () => {
-                                "use server";
-                                await signIn("github");
-                            }}
+
+                        {/* GitHub */}
+                        <button
+                            onClick={() => signIn("github")}
+                            className="flex items-center gap-2 w-[250px] px-6 py-3 bg-white text-black font-bold rounded-lg hover:bg-greenAccent hover:text-black border border-black transition"
                         >
-                            <button
-                                type="submit"
-                                className="px-6 py-3 bg-white text-black font-bold rounded-lg hover:bg-greenAccent hover:text-black border border-black transition">
-                                Sign up with Github →
-                            </button>
-                        </form>
+                            <FaGithub />
+                            Sign up with GitHub →
+                        </button>
                     </div>
+
+
                     <p className="mt-4 text-sm text-gray-400">
                         Sign Up to get started. No credit card required.
                     </p>
@@ -50,7 +70,6 @@ export default function Home() {
                     />
                 </div>
             </section>
-
 
             {/* Feature Highlight Section */}
             <section className="py-16 px-6 bg-black">
@@ -88,8 +107,7 @@ export default function Home() {
                             key={index}
                             className="bg-gradient-to-b from-greenAccent to-black p-6 rounded-lg shadow-lg hover:shadow-xl transition flex flex-col items-start"
                         >
-                            <div
-                                className="w-12 h-12 bg-black text-greenAccent flex items-center justify-center rounded-full text-2xl mb-4">
+                            <div className="w-12 h-12 bg-black text-greenAccent flex items-center justify-center rounded-full text-2xl mb-4">
                                 {feature.icon}
                             </div>
                             <h3 className="text-xl font-bold mb-2">{feature.title}</h3>
@@ -128,7 +146,9 @@ export default function Home() {
                     Ready to Get Started?
                 </h2>
                 <button
-                    className="px-6 py-3 bg-greenAccent text-black font-semibold rounded-lg hover:bg-white hover:text-greenAccent border border-black transition">
+                    onClick={() => router.push("/signup")}
+                    className="px-6 py-3 bg-greenAccent text-black font-semibold rounded-lg hover:bg-white hover:text-greenAccent border border-black transition"
+                >
                     Start Learning Now →
                 </button>
             </footer>
