@@ -70,6 +70,40 @@ const TopicProgress: React.FC = () => {
     }
   };
 
+  const handleDeleteTest = async (testId: string, lessonId: string) => {
+    if (!confirm("Are you sure you want to delete this test?")) return;
+
+    try {
+      const res = await fetch(`/api/test/delete?id=${testId}`, {
+        method: "DELETE",
+      });
+
+      if (!res.ok) throw new Error("Failed to delete test");
+
+      // Remove the deleted test from state
+      setLessons((prevLessons) =>
+        prevLessons.map((lesson) => {
+          if (lesson._id === lessonId) {
+            const updatedTests = lesson.tests.filter((test: any) => test._id !== testId);
+            const totalPercentage = updatedTests.reduce(
+              (acc: number, test: any) => acc + (test.percentage || 0),
+              0
+            );
+            const avgScore =
+              updatedTests.length > 0
+                ? (totalPercentage / updatedTests.length).toFixed(2)
+                : "0.00";
+            return { ...lesson, tests: updatedTests, avgScore };
+          }
+          return lesson;
+        })
+      );
+    } catch (error) {
+      console.error("❌ Error deleting test:", error);
+      alert("Failed to delete test.");
+    }
+  };
+
   const totalScoresSum = lessons.reduce(
     (acc, lesson) => acc + (parseFloat(lesson.avgScore) || 0),
     0
@@ -95,8 +129,11 @@ const TopicProgress: React.FC = () => {
           <p className="text-lg font-semibold">Overall Average Score: {overallAverageScore}%</p>
           <div className="w-full bg-gray-700 rounded-full h-4 mt-2">
             <div
-              className="bg-greenAccent h-4 rounded-full"
-              style={{ width: `${overallAverageScore}%` }}
+              className="bg-greenAccent h-4 rounded-full transition-all duration-500"
+              style={{
+                width: `${Math.min(parseFloat(overallAverageScore), 100)}%`,
+                minWidth: parseFloat(overallAverageScore) > 0 ? "5px" : "0",
+              }}
             />
           </div>
         </div>
@@ -121,7 +158,9 @@ const TopicProgress: React.FC = () => {
                     Average Score: {lesson.avgScore}%
                   </p>
                 </div>
-                <span className="text-greenAccent">{expandedLesson === lesson._id ? "▲" : "▼"}</span>
+                <span className="text-greenAccent">
+                  {expandedLesson === lesson._id ? "▲" : "▼"}
+                </span>
               </div>
 
               {/* Test Results */}
@@ -131,26 +170,38 @@ const TopicProgress: React.FC = () => {
                   <div className="space-y-2">
                     {lesson.tests.map((test: any, index: number) => (
                       <div
-                      key={test._id || index}
-                      className="bg-black p-3 rounded-md flex justify-between items-center"
-                    >
-                      <p className="flex items-center text-sm text-gray-300 gap-2">
-                        Date {test.createdAt ? new Date(test.createdAt).toLocaleDateString() : "Unknown"}
-                      </p>
-                    
-                      <p className="flex items-center text-sm text-green-400 font-semibold gap-1">
-                        Score:{" "}
-                        {test.percentage !== undefined ? `${test.percentage.toFixed(1)}%` : "Not taken yet"}
-                      </p>
-                    
-                      <button
-                        className="px-4 py-2 bg-[#27d63c]  text-white font-bold rounded-md hover:bg-green-500 transition"
-                        onClick={() => setSelectedTest(test)}
+                        key={test._id || index}
+                        className="bg-black p-3 rounded-md flex justify-between items-center gap-4"
                       >
-                        View Test
-                      </button>
-                    </div>
-                    
+                        <p className="text-sm text-gray-300">
+                          Date{" "}
+                          {test.createdAt
+                            ? new Date(test.createdAt).toLocaleDateString()
+                            : "Unknown"}
+                        </p>
+
+                        <p className="text-sm text-green-400 font-semibold">
+                          Score:{" "}
+                          {test.percentage !== undefined
+                            ? `${test.percentage.toFixed(1)}%`
+                            : "Not taken yet"}
+                        </p>
+
+                        <div className="flex gap-2">
+                          <button
+                            className="px-4 py-2 bg-greenAccent text-black font-bold rounded-md hover:bg-green-500 transition"
+                            onClick={() => setSelectedTest(test)}
+                          >
+                            View Test
+                          </button>
+                          <button
+                            className="px-4 py-2 bg-red-600 text-white font-bold rounded-md hover:bg-red-700 transition"
+                            onClick={() => handleDeleteTest(test._id, lesson._id)}
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </div>
                     ))}
                   </div>
                 </div>
