@@ -49,8 +49,9 @@ const TopicProgress: React.FC = () => {
 
             let totalPercentage = 0;
             testData.tests.forEach((test: any) => {
-              const testPercentage = test.percentage || 0;
-              totalPercentage += testPercentage;
+              if (typeof test.percentage === "number") {
+                totalPercentage += test.percentage;
+              }
             });
 
             const avgScore = totalTests > 0 ? (totalPercentage / totalTests).toFixed(2) : "0.00";
@@ -80,19 +81,20 @@ const TopicProgress: React.FC = () => {
 
       if (!res.ok) throw new Error("Failed to delete test");
 
-      // Remove the deleted test from state
+      // Update local state
       setLessons((prevLessons) =>
         prevLessons.map((lesson) => {
           if (lesson._id === lessonId) {
-            const updatedTests = lesson.tests.filter((test: any) => test._id !== testId);
+            const updatedTests = lesson.tests.filter((t: any) => t._id !== testId);
             const totalPercentage = updatedTests.reduce(
-              (acc: number, test: any) => acc + (test.percentage || 0),
+              (acc: number, t: any) => acc + (typeof t.percentage === "number" ? t.percentage : 0),
               0
             );
             const avgScore =
               updatedTests.length > 0
                 ? (totalPercentage / updatedTests.length).toFixed(2)
                 : "0.00";
+
             return { ...lesson, tests: updatedTests, avgScore };
           }
           return lesson;
@@ -108,7 +110,6 @@ const TopicProgress: React.FC = () => {
     (acc, lesson) => acc + (parseFloat(lesson.avgScore) || 0),
     0
   );
-
   const overallAverageScore =
     lessons.length > 0 ? (totalScoresSum / lessons.length).toFixed(2) : "0.00";
 
@@ -124,7 +125,7 @@ const TopicProgress: React.FC = () => {
       <div className="min-h-screen bg-customDark text-white p-6">
         <h1 className="text-3xl font-bold mb-6">📊 Progress for {topic.title}</h1>
 
-        {/* Progress Overview */}
+        {/* Overall Average */}
         <div className="bg-customGray p-4 rounded-lg shadow-md mb-6">
           <p className="text-lg font-semibold">Overall Average Score: {overallAverageScore}%</p>
           <div className="w-full bg-gray-700 rounded-full h-4 mt-2">
@@ -138,14 +139,16 @@ const TopicProgress: React.FC = () => {
           </div>
         </div>
 
-        {/* Lesson Breakdown */}
+        {/* Lessons List */}
         <h2 className="text-xl font-semibold mb-4">Lesson Breakdown</h2>
         <div className="space-y-4">
           {lessons.map((lesson) => (
             <div key={lesson._id} className="bg-customGray p-4 rounded-lg shadow-md">
               <div
                 className="flex justify-between items-center cursor-pointer"
-                onClick={() => setExpandedLesson(expandedLesson === lesson._id ? null : lesson._id)}
+                onClick={() =>
+                  setExpandedLesson(expandedLesson === lesson._id ? null : lesson._id)
+                }
               >
                 <div>
                   <h3 className="text-lg font-bold">{lesson.title}</h3>
@@ -163,7 +166,7 @@ const TopicProgress: React.FC = () => {
                 </span>
               </div>
 
-              {/* Test Results */}
+              {/* Tests Section */}
               {expandedLesson === lesson._id && lesson.tests.length > 0 && (
                 <div className="mt-2 p-3 bg-customGray rounded-lg">
                   <h4 className="text-lg font-bold mb-2">Past Test Results:</h4>
@@ -182,7 +185,7 @@ const TopicProgress: React.FC = () => {
 
                         <p className="text-sm text-green-400 font-semibold">
                           Score:{" "}
-                          {test.percentage !== undefined
+                          {typeof test.percentage === "number"
                             ? `${test.percentage.toFixed(1)}%`
                             : "Not taken yet"}
                         </p>
