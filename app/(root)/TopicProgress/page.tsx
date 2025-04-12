@@ -14,6 +14,10 @@ const TopicProgress: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [selectedTest, setSelectedTest] = useState<any>(null);
 
+  // 🔴 Custom delete modal state
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [testToDelete, setTestToDelete] = useState<{ testId: string; lessonId: string } | null>(null);
+
   useEffect(() => {
     if (topicId) {
       fetchTopic();
@@ -71,8 +75,9 @@ const TopicProgress: React.FC = () => {
     }
   };
 
-  const handleDeleteTest = async (testId: string, lessonId: string) => {
-    if (!confirm("Are you sure you want to delete this test?")) return;
+  const confirmDeleteTest = async () => {
+    if (!testToDelete) return;
+    const { testId, lessonId } = testToDelete;
 
     try {
       const res = await fetch(`/api/test/delete?id=${testId}`, {
@@ -81,7 +86,6 @@ const TopicProgress: React.FC = () => {
 
       if (!res.ok) throw new Error("Failed to delete test");
 
-      // Update local state
       setLessons((prevLessons) =>
         prevLessons.map((lesson) => {
           if (lesson._id === lessonId) {
@@ -94,12 +98,14 @@ const TopicProgress: React.FC = () => {
               updatedTests.length > 0
                 ? (totalPercentage / updatedTests.length).toFixed(2)
                 : "0.00";
-
             return { ...lesson, tests: updatedTests, avgScore };
           }
           return lesson;
         })
       );
+
+      setShowDeleteModal(false);
+      setTestToDelete(null);
     } catch (error) {
       console.error("❌ Error deleting test:", error);
       alert("Failed to delete test.");
@@ -199,7 +205,11 @@ const TopicProgress: React.FC = () => {
                           </button>
                           <button
                             className="px-4 py-2 bg-red-600 text-white font-bold rounded-md hover:bg-red-700 transition"
-                            onClick={() => handleDeleteTest(test._id, lesson._id)}
+                            onClick={() => {
+                              setTestToDelete({ testId: test._id, lessonId: lesson._id });
+                              setShowDeleteModal(true);
+                            }}
+                            
                           >
                             Delete
                           </button>
@@ -221,6 +231,35 @@ const TopicProgress: React.FC = () => {
           onClick={() => setSelectedTest(null)}
         >
           <TestViewer test={selectedTest} onClose={() => setSelectedTest(null)} />
+        </div>
+      )}
+
+      {/* Delete Modal */}
+      {showDeleteModal && testToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white text-black p-6 rounded-xl shadow-xl w-full max-w-md">
+            <h2 className="text-xl font-bold mb-4">Confirm Test Deletion</h2>
+            <p className="mb-6">
+              Are you sure you want to delete this test? This action cannot be undone.
+            </p>
+            <div className="flex justify-end space-x-4">
+              <button
+                className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setTestToDelete(null);
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+                onClick={confirmDeleteTest}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </>

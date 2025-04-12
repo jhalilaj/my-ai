@@ -3,7 +3,13 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { FaBookOpen, FaCheckCircle, FaChartLine, FaTimes, FaEdit } from "react-icons/fa";
+import {
+  FaBookOpen,
+  FaCheckCircle,
+  FaChartLine,
+  FaTimes,
+  FaEdit,
+} from "react-icons/fa";
 
 interface Topic {
   id: string;
@@ -20,6 +26,9 @@ const UserDashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [editingTopicId, setEditingTopicId] = useState<string | null>(null);
   const [editedTitle, setEditedTitle] = useState<string>("");
+
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [topicToDelete, setTopicToDelete] = useState<Topic | null>(null);
 
   useEffect(() => {
     if (session) {
@@ -41,36 +50,33 @@ const UserDashboard: React.FC = () => {
     }
   };
 
-  // ✅ Delete topic function
-  const deleteTopic = async (id: string) => {
-    const confirmDelete = window.confirm(`Are you sure you want to delete this topic?`);
-    if (!confirmDelete) return;
+  const confirmDeleteTopic = async () => {
+    if (!topicToDelete) return;
 
     try {
       const response = await fetch("/api/topics/delete", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id }),
+        body: JSON.stringify({ id: topicToDelete.id }),
       });
 
       if (!response.ok) {
         throw new Error("Failed to delete topic");
       }
 
-      // ✅ Remove topic from UI
-      setTopics((prevTopics) => prevTopics.filter((topic) => topic.id !== id));
+      setTopics((prev) => prev.filter((t) => t.id !== topicToDelete.id));
+      setShowDeleteModal(false);
+      setTopicToDelete(null);
     } catch (error) {
       console.error("Error deleting topic:", error);
     }
   };
 
-  // ✅ Start editing a topic title
   const startEditing = (id: string, title: string) => {
     setEditingTopicId(id);
     setEditedTitle(title);
   };
 
-  // ✅ Save the edited topic title
   const saveEdit = async (id: string) => {
     if (!editedTitle.trim()) return;
 
@@ -98,8 +104,7 @@ const UserDashboard: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-customDark text-white p-6">
-
-      {/* 📊 Progress Overview */}
+      {/* 📊 Overview */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <div className="bg-customGray p-6 rounded-lg shadow-md flex items-center">
           <FaBookOpen className="text-greenAccent text-3xl mr-4" />
@@ -124,8 +129,9 @@ const UserDashboard: React.FC = () => {
             <p className="text-2xl">
               {topics.length > 0
                 ? Math.round(
-                  topics.reduce((acc, topic) => acc + topic.averageScore, 0) / topics.length
-                )
+                    topics.reduce((acc, topic) => acc + topic.averageScore, 0) /
+                      topics.length
+                  )
                 : 0}
               %
             </p>
@@ -133,7 +139,7 @@ const UserDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* 📚 Topic List */}
+      {/* 📚 Topics */}
       <div className="mb-8">
         <h2 className="text-xl font-semibold mb-4">Your Topics</h2>
         {loading ? (
@@ -148,7 +154,6 @@ const UserDashboard: React.FC = () => {
                 className="p-4 bg-customGray rounded-lg shadow-md flex justify-between items-center"
               >
                 <div>
-                  {/* Editable Title & Progress Info */}
                   {editingTopicId === topic.id ? (
                     <input
                       type="text"
@@ -169,7 +174,6 @@ const UserDashboard: React.FC = () => {
                 </div>
 
                 <div className="flex space-x-3">
-                  {/* ✏️ Edit Button */}
                   <button
                     className="p-2 bg-[#27d63c] text-black rounded-md hover:opacity-90 transition"
                     onClick={() => startEditing(topic.id, topic.title)}
@@ -179,7 +183,9 @@ const UserDashboard: React.FC = () => {
 
                   <button
                     className="px-4 py-2 bg-[#27d63c] text-black font-bold rounded-md hover:opacity-90 transition"
-                    onClick={() => router.push(`/chatbot?topicId=${topic.id}&lesson=lesson1`)}
+                    onClick={() =>
+                      router.push(`/chatbot?topicId=${topic.id}&lesson=lesson1`)
+                    }
                   >
                     Continue Learning
                   </button>
@@ -191,11 +197,12 @@ const UserDashboard: React.FC = () => {
                     Check Progress
                   </button>
 
-
-                  {/* ❌ Square Delete Button */}
                   <button
                     className="p-2 bg-red-500 text-white font-bold rounded-md hover:bg-red-600 transition"
-                    onClick={() => deleteTopic(topic.id)}
+                    onClick={() => {
+                      setTopicToDelete(topic);
+                      setShowDeleteModal(true);
+                    }}
                   >
                     <FaTimes />
                   </button>
@@ -205,6 +212,37 @@ const UserDashboard: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* 🧼 Custom Delete Modal */}
+      {showDeleteModal && topicToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white text-black p-6 rounded-xl shadow-xl w-full max-w-md">
+            <h2 className="text-xl font-bold mb-4">Confirm Deletion</h2>
+            <p className="mb-6">
+              Are you sure you want to delete the topic{" "}
+              <span className="text-red-600 font-semibold">{topicToDelete.title}</span>?
+              This action cannot be undone.
+            </p>
+            <div className="flex justify-end space-x-4">
+              <button
+                className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setTopicToDelete(null);
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+                onClick={confirmDeleteTopic}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
