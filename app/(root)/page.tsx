@@ -51,7 +51,7 @@ export default function Home() {
                             className="flex items-center gap-2 w-[250px] px-6 py-3 bg-white text-black font-bold rounded-lg hover:bg-greenAccent hover:text-black border border-black transition"
                         >
                             <FaGithub />
-                            Sign up with GitHub →
+                            Sign up with GitHub
                         </button>
                     </div>
 

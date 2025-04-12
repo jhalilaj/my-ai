@@ -10,6 +10,7 @@ export default function UploadPage() {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [lessonTopic, setLessonTopic] = useState("");
   const [teachingStyle, setTeachingStyle] = useState("Simple");
+  const [aiModel, setAiModel] = useState("gpt"); // Default to "gpt"
   const [uploading, setUploading] = useState(false);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -30,7 +31,7 @@ export default function UploadPage() {
     let topicId = null;
 
     try {
-      // ✅ Step 1: Upload All Files
+      // Step 1: Upload All Files
       if (selectedFiles.length > 0) {
         for (const file of selectedFiles) {
           const formData = new FormData();
@@ -60,7 +61,7 @@ export default function UploadPage() {
         return;
       }
 
-      // ✅ Step 2: Create Topic
+      // Step 2: Create Topic
       console.log("📝 Creating topic...");
       const topicRes = await fetch("/api/topics/create", {
         method: "POST",
@@ -68,7 +69,7 @@ export default function UploadPage() {
         body: JSON.stringify({
           topicTitle: lessonTopic || "Untitled Topic",
           teachingStyle,
-          fileId: fileIds, // 🔁 Pass multiple file IDs
+          fileId: fileIds, // Pass multiple file IDs
         }),
       });
 
@@ -84,7 +85,7 @@ export default function UploadPage() {
       topicId = topicData.topicId;
       console.log("🆔 Topic Created:", topicId);
 
-      // ✅ Step 3: Generate Lessons
+      // Step 3: Generate Lessons
       const depth = teachingStyle === "Simple" ? 3 : teachingStyle === "Intermediate" ? 5 : 10;
       console.log("📚 Generating lessons...");
 
@@ -95,6 +96,7 @@ export default function UploadPage() {
           topicId,
           content: filePaths.length > 0 ? filePaths : lessonTopic,
           depth,
+          aiModel,
         }),
       });
 
@@ -109,7 +111,7 @@ export default function UploadPage() {
 
       console.log("✅ Lessons Generated:", lessonData.lessons);
 
-      // ✅ Step 4: Redirect to Chat Page
+      // Step 4: Redirect to Chat Page
       router.push(`/chatbot?topicId=${topicId}&lesson=lesson1`);
     } catch (error) {
       console.error("❌ Error generating lessons:", error);
@@ -161,13 +163,26 @@ export default function UploadPage() {
           </select>
         </div>
 
+        {/* Dropdown for AI Model Selection */}
+        <div className="mb-4">
+          <label className="block text-sm font-medium mb-1">Select AI Model</label>
+          <select
+            value={aiModel}
+            onChange={(e) => setAiModel(e.target.value)}
+            className="w-full bg-gray-700 text-white p-2 rounded-md"
+          >
+            <option value="gpt">GPT</option>
+            <option value="llama">Llama</option>
+            <option value="gemini">Gemini</option>
+            <option value="deepseek">Deepseek</option>
+          </select>
+        </div>
+
         {/* Generate Lesson Button */}
         <button
           onClick={handleGenerateLesson}
           disabled={uploading}
-          className={`w-full ${
-            uploading ? "bg-gray-600" : "bg-green-500 hover:bg-green-600"
-          } text-white font-semibold py-2 rounded-md transition`}
+          className={`w-full ${uploading ? "bg-gray-600" : "bg-green-500 hover:bg-green-600"} text-white font-semibold py-2 rounded-md transition`}
         >
           {uploading ? "Generating..." : "Generate Lesson"}
         </button>
