@@ -61,7 +61,7 @@ export default function UploadPage() {
         return;
       }
 
-      // Step 2: Create Topic
+      // Step 2: Create Topic (include the selected AI model)
       console.log("📝 Creating topic...");
       const topicRes = await fetch("/api/topics/create", {
         method: "POST",
@@ -69,7 +69,8 @@ export default function UploadPage() {
         body: JSON.stringify({
           topicTitle: lessonTopic || "Untitled Topic",
           teachingStyle,
-          fileId: fileIds, // Pass multiple file IDs
+          fileId: fileIds, // Pass multiple file IDs if present
+          aiModel,         // Pass the user-selected AI model
         }),
       });
 
@@ -96,7 +97,7 @@ export default function UploadPage() {
           topicId,
           content: filePaths.length > 0 ? filePaths : lessonTopic,
           depth,
-          aiModel,
+          aiModel, // Pass the chosen AI model along – or alternatively use the one stored in the Topic document.
         }),
       });
 
@@ -190,3 +191,5 @@ export default function UploadPage() {
     </div>
   );
 }
+
+export const runtime = "nodejs"; // Ensure Node.js runtime

@@ -1,9 +1,10 @@
+// /components/ChatBox.tsx
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm"; // ✅ GitHub-style markdown support
+import remarkGfm from "remark-gfm"; // GitHub-style markdown support
 
 interface ChatBoxProps {
   lessonId: string;
@@ -13,18 +14,22 @@ interface ChatBoxProps {
 const ChatBox: React.FC<ChatBoxProps> = ({ lessonId, fileContent }) => {
   const { data: session } = useSession();
   const [message, setMessage] = useState("");
-  const [chatHistory, setChatHistory] = useState<{ sender: string; text?: string; image?: string }[]>([]);
+  const [chatHistory, setChatHistory] = useState<
+    { sender: string; text?: string; image?: string }[]
+  >([]);
   const [loading, setLoading] = useState(false);
   const [lessonContent, setLessonContent] = useState<string | null>(null);
-  const [isTyping, setIsTyping] = useState(false); // Track typing status
+  const [isTyping, setIsTyping] = useState(false);
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
+  // Scroll to the bottom of the chat when new messages arrive
   useEffect(() => {
     if (chatContainerRef.current) {
       chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
     }
   }, [chatHistory]);
 
+  // Fetch the lesson content and chat history when session or lessonId changes
   useEffect(() => {
     if (session?.user?.email) {
       fetchChats();
@@ -67,46 +72,46 @@ const ChatBox: React.FC<ChatBoxProps> = ({ lessonId, fileContent }) => {
       return;
     }
 
-    const newUserMessage = { role: "user", content: message };
+    // Append the new user message to the chat history
     setChatHistory((prev) => [...prev, { sender: "You", text: message }]);
+    const currentLessonId = lessonId; // Provided via props
+    const userMessage = { role: "user", content: message };
     setMessage("");
     setLoading(true);
-    setIsTyping(true); // Show typing animation
+    setIsTyping(true);
 
     try {
+      // Build the prompt from previous conversation and lesson content
       let prompt = `Previous conversation:\n`;
       chatHistory.forEach((msg) => {
         prompt += `${msg.sender}: ${msg.text}\n`;
       });
-
       if (lessonContent) {
         prompt += `\nLesson Content:\n${lessonContent}\n\n`;
       }
-
       prompt += `User: ${message}\nAssistant:`;
 
+      // Include lessonId in the request so that the API can choose the correct AI model
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt }),
+        body: JSON.stringify({ prompt, lessonId: currentLessonId }),
       });
 
       if (!res.ok) throw new Error(`Failed to get AI response. Status: ${res.status}`);
 
       const data = await res.json();
-      let botResponse = data.message || "Error fetching response.";
-      const newBotMessage = { role: "assistant", content: botResponse };
-
+      const botResponse = data.message || "Error fetching response.";
       setChatHistory((prev) => [...prev, { sender: "Bot", text: botResponse }]);
 
-      // Save chat history to the database
+      // (Optional) Save the conversation to the database
       await fetch("/api/chat/save", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           userId: session.user.email,
-          lessonId,
-          messages: [newUserMessage, newBotMessage],
+          lessonId: currentLessonId,
+          messages: [userMessage, { role: "assistant", content: botResponse }],
         }),
       });
     } catch (error) {
@@ -114,7 +119,7 @@ const ChatBox: React.FC<ChatBoxProps> = ({ lessonId, fileContent }) => {
       setChatHistory((prev) => [...prev, { sender: "Bot", text: "Network error." }]);
     } finally {
       setLoading(false);
-      setIsTyping(false); // Hide typing animation once the bot responds
+      setIsTyping(false);
     }
   };
 
@@ -142,8 +147,7 @@ const ChatBox: React.FC<ChatBoxProps> = ({ lessonId, fileContent }) => {
               </ReactMarkdown>
             </div>
           )}
-
-          {/* Chat Messages */}
+          {/* Render Chat Messages */}
           {chatHistory.map((msg, index) => (
             <div key={index} className="mb-6">
               <p className={`font-semibold mb-1 ${msg.sender === "You" ? "text-greenAccent" : "text-white"}`}>
@@ -156,8 +160,7 @@ const ChatBox: React.FC<ChatBoxProps> = ({ lessonId, fileContent }) => {
               </div>
             </div>
           ))}
-
-          {/* Show "AI is typing..." animation */}
+          {/* Typing Indicator */}
           {isTyping && (
             <div className="font-semibold text-gray-400 mb-6">
               <p className="typing-animation">AI-Tutor: </p>

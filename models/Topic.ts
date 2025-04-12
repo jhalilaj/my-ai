@@ -8,7 +8,8 @@ interface ITopic extends Document {
   completedLessons: number;
   averageScore: number;
   lessons: string[];
-  fileIds?: string[]; // ✅ Multiple file references
+  fileIds?: string[]; // Multiple file references
+  aiModel: "gpt" | "llama" | "gemini" | "deepseek"; // New field for selected AI model
 }
 
 const TopicSchema = new Schema<ITopic>({
@@ -19,7 +20,8 @@ const TopicSchema = new Schema<ITopic>({
   completedLessons: { type: Number, default: 0 },
   averageScore: { type: Number, default: 0 },
   lessons: [{ type: String }],
-  fileIds: [{ type: String }], // ✅ New field
+  fileIds: [{ type: String }],
+  aiModel: { type: String, enum: ["gpt", "llama", "gemini", "deepseek"], default: "gpt" }, // New field
 });
 
 export default mongoose.models.Topic || mongoose.model<ITopic>("Topic", TopicSchema);

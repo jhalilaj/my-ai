@@ -1,10 +1,22 @@
-// app/api/generate-test/route.ts
+// /app/api/generate-test/route.ts
 export const runtime = "nodejs"; // Ensure we're using the Node.js runtime
 
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import Test from "@/models/Test";
 import Lesson from "@/models/Lesson";
+import Topic from "@/models/Topic";
+import OpenAI from "openai";
+
+// Instantiate OpenAI client for GPT (hardcoded API key)
+const openai = new OpenAI({
+  apiKey:
+    "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",
+});
+
+// Hardcoded API key for external models via OpenRouter (used for Llama, Gemini, Deepseek)
+const openrouterApiKey =
+  "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";
 
 export async function POST(req: Request) {
   // Connect to MongoDB
@@ -25,6 +37,17 @@ export async function POST(req: Request) {
       console.error("❌ Lesson not found for lessonId:", lessonId);
       return NextResponse.json({ error: "Lesson not found" }, { status: 404 });
     }
+
+    // Fetch the related topic to retrieve the chosen AI model
+    const topic = await Topic.findById(lesson.topicId);
+    if (!topic) {
+      console.error("❌ Topic not found for lessonId:", lessonId);
+      return NextResponse.json({ error: "Topic not found" }, { status: 404 });
+    }
+    
+    // Retrieve the chosen AI model (one of: "gpt", "llama", "gemini", "deepseek")
+    const chosenModel = topic.aiModel || "gpt";
+    console.log("Chosen AI model for test generation:", chosenModel);
 
     // Build the prompt to generate test questions from lesson content
     const prompt = `
@@ -50,68 +73,106 @@ Return the test as a JSON array. Each object must include:
 - "question": the actual question
 - "options": (only for mcq, an array of 4 options)
 - "correctAnswer": "A"/"B"/"C"/"D" for mcq, or a sample answer for theory/practical
-
-Example:
-  {
-    "type": "mcq",
-    "question": "Which of the following is true about the Java Virtual Machine (JVM)?",
-    "options": ["JVM is the hardware part of a computer.", "JVM interprets and executes Java bytecode.", "JVM is used to compile Java programs.", "JVM is only available on Windows operating systems."],
-    "correctAnswer": "B"
-  },
-  {
-    "type": "mcq",
-    "question": "Which method is considered the entry point of any Java application?",
-    "options": ["public void start()", "public static void main(String[] args)", "public static void begin(String[] args)", "public main()"],
-    "correctAnswer": "B"
-  },
-  {
-    "type": "theory",
-    "question": "Explain the importance of the main method in Java.",
-    "correctAnswer": "The main method is the entry point for any Java application. It is the method invoked by the Java Virtual Machine to start the execution of the program."
-  },
-  {
-    "type": "practical",
-    "question": "Write a Java program to check whether a number is prime.",
-    "correctAnswer": "public class PrimeCheck { public static void main(String[] args) { int num = 11; boolean isPrime = true; for (int i = 2; i <= num / 2; i++) { if (num % i == 0) { isPrime = false; break; } } System.out.println(isPrime ? 'Prime' : 'Not Prime'); } }"
-  }
     `.trim();
 
-    // Call the OpenRouter API (which uses the Llama model) via fetch
-    const openrouterApiKey = "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";
-    const routerResponse = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${openrouterApiKey}`,
-        "HTTP-Referer": "https://your-site-url.com", // Optional; replace with your actual site URL
-        "X-Title": "YourSiteName", // Optional; replace with your site name
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "meta-llama/llama-4-scout:free", // Use the Llama model
-        messages: [
-          {
-            role: "user",
-            content: [
-              {
-                type: "text",
-                text: prompt,
-              }
-              // For this prompt, we're sending text only. If needed, you can include additional content objects.
-            ],
-          },
-        ],
-      }),
-    });
+    let testRawResponse = "";
 
-    const routerData = await routerResponse.json();
+    // Use the selected model for generating test questions
+    if (chosenModel === "llama") {
+      console.log("Using Llama API for test generation.");
+      const routerResponse = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${openrouterApiKey}`,
+          "HTTP-Referer": "https://your-site-url.com",
+          "X-Title": "YourSiteName",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "meta-llama/llama-4-scout",
+          messages: [
+            {
+              role: "user",
+              content: [
+                {
+                  type: "text",
+                  text: prompt,
+                },
+              ],
+            },
+          ],
+        }),
+      });
+      const routerData = await routerResponse.json();
+      testRawResponse = routerData.choices?.[0]?.message?.content || "[]";
+    } else if (chosenModel === "gemini") {
+      console.log("Using Gemini API for test generation.");
+      const routerResponse = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${openrouterApiKey}`,
+          "HTTP-Referer": "https://your-site-url.com",
+          "X-Title": "YourSiteName",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "google/gemini-2.5-pro-preview-03-25",
+          messages: [
+            {
+              role: "user",
+              content: [
+                {
+                  type: "text",
+                  text: prompt,
+                },
+              ],
+            },
+          ],
+        }),
+      });
+      const routerData = await routerResponse.json();
+      testRawResponse = routerData.choices?.[0]?.message?.content || "[]";
+    } else if (chosenModel === "deepseek") {
+      console.log("Using Deepseek API for test generation.");
+      const routerResponse = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${openrouterApiKey}`,
+          "HTTP-Referer": "https://your-site-url.com",
+          "X-Title": "YourSiteName",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "deepseek/deepseek-chat-v3-0324",
+          messages: [
+            {
+              role: "user",
+              content: [
+                {
+                  type: "text",
+                  text: prompt,
+                },
+              ],
+            },
+          ],
+        }),
+      });
+      const routerData = await routerResponse.json();
+      testRawResponse = routerData.choices?.[0]?.message?.content || "[]";
+    } else {
+      console.log("Using GPT API for test generation.");
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [{ role: "user", content: prompt }],
+      });
+      testRawResponse = response.choices?.[0]?.message?.content || "[]";
+    }
 
-    // Expecting a similar response format to OpenAI; extract the raw message content.
-    let rawResponse = routerData.choices?.[0]?.message?.content || "[]";
-    console.log("Raw AI Response:", rawResponse);
+    console.log("Raw AI Test Response:", testRawResponse);
 
-    // Extract only the JSON portion from within triple backticks.
-    const jsonMatch = rawResponse.match(/```json\s*([\s\S]*?)\s*```/i);
-    const jsonString = jsonMatch ? jsonMatch[1].trim() : rawResponse.replace(/```/g, "").trim();
+    // Extract only the JSON portion from within triple backticks (if present)
+    const jsonMatch = testRawResponse.match(/```json\s*([\s\S]*?)\s*```/i);
+    const jsonString = jsonMatch ? jsonMatch[1].trim() : testRawResponse.replace(/```/g, "").trim();
 
     let parsedTest;
     try {
@@ -128,7 +189,7 @@ Example:
     }
 
     // Save the generated test to your database
-    const test = new Test({
+    const testDoc = new Test({
       lessonId,
       questions: parsedTest.map((q: { type: any; question: any; options: any; correctAnswer: any; }) => ({
         type: q.type,
@@ -136,15 +197,14 @@ Example:
         options: q.options || [],
         correctAnswer: q.correctAnswer,
       })),
-      correctAnswers: parsedTest.map((q: { type: string; correctAnswer: string; }) => {
-        // For multiple choice, convert "A"/"B"/"C"/"D" to an index; otherwise, set as null.
-        return q.type === "mcq" ? ["A", "B", "C", "D"].indexOf(q.correctAnswer) : null;
-      }),
+      correctAnswers: parsedTest.map((q: { type: string; correctAnswer: string; }) =>
+        q.type === "mcq" ? ["A", "B", "C", "D"].indexOf(q.correctAnswer) : null
+      ),
     });
 
-    await test.save();
+    await testDoc.save();
 
-    return NextResponse.json({ success: true, test });
+    return NextResponse.json({ success: true, test: testDoc });
   } catch (error) {
     console.error("❌ Test Generation Error:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
