@@ -1,16 +1,133 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
+import Image from "next/image";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { SiOpenai } from "react-icons/si";
 
+/* --------------------------------------------
+ *  AI Models with Icons
+ * -------------------------------------------- */
+const aiModels = [
+  {
+    value: "gpt",
+    label: "GPT",
+    icon: <SiOpenai className="w-6 h-6" />,
+  },
+  {
+    value: "llama",
+    label: "Llama",
+    icon: (
+      <Image
+        src="/images/Llama.webp"
+        alt="Llama Icon"
+        width={24}
+        height={24}
+        className="w-6 h-6"
+      />
+    ),
+  },
+  {
+    value: "gemini",
+    label: "Gemini",
+    icon: (
+      <Image
+        src="/images/gemini.webp"
+        alt="Gemini Icon"
+        width={24}
+        height={24}
+        className="w-6 h-6"
+      />
+    ),
+  },
+  {
+    value: "deepseek",
+    label: "Deepseek",
+    icon: (
+      <Image
+        src="/images/deepseek.webp"
+        alt="Deepseek Icon"
+        width={24}
+        height={24}
+        className="w-6 h-6"
+      />
+    ),
+  },
+];
+
+/* --------------------------------------------
+ *  Custom AI Model Dropdown
+ * -------------------------------------------- */
+function AImodelSelect({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (ref.current && !ref.current.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const selectedOption = aiModels.find((model) => model.value === value);
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="w-full p-3 rounded-md bg-white text-black border border-gray-300 hover:border-black flex items-center justify-between focus:ring-2 focus:ring-greenAccent focus:outline-none"
+      >
+        <div className="flex items-center gap-2">
+          {selectedOption?.icon}
+          <span>{selectedOption?.label || "Select AI Model"}</span>
+        </div>
+        <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+      {open && (
+        <ul className="absolute z-10 w-full bg-white border border-gray-300 rounded-md mt-1 text-black">
+          {aiModels.map((model) => (
+            <li
+              key={model.value}
+              onClick={() => {
+                onChange(model.value);
+                setOpen(false);
+              }}
+              className="p-3 hover:bg-gray-100 cursor-pointer flex items-center gap-2"
+            >
+              {model.icon}
+              <span>{model.label}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+/* --------------------------------------------
+ *  Upload Page Component
+ * -------------------------------------------- */
 export default function UploadPage() {
   const { data: session } = useSession();
   const router = useRouter();
+
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [lessonTopic, setLessonTopic] = useState("");
-  const [teachingStyle, setTeachingStyle] = useState("Simple");
-  const [aiModel, setAiModel] = useState("gpt"); // Default to "gpt"
+  const [teachingStyle, setTeachingStyle] = useState("Simple"); // Default teaching style
+  const [aiModel, setAiModel] = useState("gpt");
   const [uploading, setUploading] = useState(false);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -31,27 +148,21 @@ export default function UploadPage() {
     let topicId = null;
 
     try {
-      // Step 1: Upload All Files
       if (selectedFiles.length > 0) {
         for (const file of selectedFiles) {
           const formData = new FormData();
           formData.append("file", file);
-
-          console.log("📤 Uploading file:", file.name);
           const uploadRes = await fetch("/api/upload", {
             method: "POST",
             body: formData,
           });
-
           const uploadData = await uploadRes.json();
           if (!uploadRes.ok || !uploadData.success) {
             alert(`Error uploading file: ${file.name}`);
             continue;
           }
-
           fileIds.push(uploadData.fileId);
           filePaths.push(uploadData.filePath);
-          console.log("✅ File uploaded:", uploadData.fileId);
         }
       }
 
@@ -61,22 +172,17 @@ export default function UploadPage() {
         return;
       }
 
-      // Step 2: Create Topic (include the selected AI model)
-      console.log("📝 Creating topic...");
       const topicRes = await fetch("/api/topics/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           topicTitle: lessonTopic || "Untitled Topic",
           teachingStyle,
-          fileId: fileIds, // Pass multiple file IDs if present
-          aiModel,         // Pass the user-selected AI model
+          fileId: fileIds,
+          aiModel,
         }),
       });
-
       const topicData = await topicRes.json();
-      console.log("📥 Topic API Response:", topicData);
-
       if (!topicRes.ok || !topicData.topicId) {
         alert("Error creating topic.");
         setUploading(false);
@@ -84,11 +190,7 @@ export default function UploadPage() {
       }
 
       topicId = topicData.topicId;
-      console.log("🆔 Topic Created:", topicId);
-
-      // Step 3: Generate Lessons
       const depth = teachingStyle === "Simple" ? 3 : teachingStyle === "Intermediate" ? 5 : 10;
-      console.log("📚 Generating lessons...");
 
       const lessonRes = await fetch("/api/lesson/generate", {
         method: "POST",
@@ -97,22 +199,17 @@ export default function UploadPage() {
           topicId,
           content: filePaths.length > 0 ? filePaths : lessonTopic,
           depth,
-          aiModel, // Pass the chosen AI model along – or alternatively use the one stored in the Topic document.
+          aiModel,
         }),
       });
 
       const lessonData = await lessonRes.json();
-      console.log("📥 Lesson API Response:", lessonData);
-
       if (!lessonRes.ok || !lessonData.success) {
         alert("Error generating lessons.");
         setUploading(false);
         return;
       }
 
-      console.log("✅ Lessons Generated:", lessonData.lessons);
-
-      // Step 4: Redirect to Chat Page
       router.push(`/chatbot?topicId=${topicId}&lesson=lesson1`);
     } catch (error) {
       console.error("❌ Error generating lessons:", error);
@@ -123,67 +220,57 @@ export default function UploadPage() {
   };
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-gray-900">
-      <div className="bg-gray-800 text-white p-6 rounded-lg shadow-lg w-full max-w-md">
-        <h2 className="text-2xl font-bold mb-4 text-center">Upload Lesson or Enter a Topic</h2>
+    <div className="flex justify-center items-center min-h-screen bg-black p-4">
+      <div className="w-full max-w-md rounded-xl shadow-xl border-4 border-greenAccent bg-neutral-900 text-white p-8">
+        <h2 className="text-3xl font-bold mb-6 text-center text-greenAccent">
+          <span className="text-white">Upload</span> Lesson or Enter a Topic
+        </h2>
 
         {/* File Upload Section */}
-        <div className="mb-4">
-          <label className="block text-sm font-medium mb-1">Choose Files (PDF/DOCX)</label>
+        <div className="mb-6">
+          <label className="block text-lg font-medium mb-2 text-gray-300">
+            Choose Files (PDF/DOCX)
+          </label>
           <input
             type="file"
             multiple
             onChange={handleFileChange}
-            className="w-full text-white bg-gray-700 p-2 rounded-md"
+            className="w-full p-3 rounded-md bg-white text-black border border-gray-300 hover:border-black focus:ring-2 focus:ring-greenAccent focus:outline-none"
           />
         </div>
 
-        {/* Text Input for Lesson Topic */}
-        <div className="mb-4">
-          <label className="block text-sm font-medium mb-1">Or Enter a Topic</label>
+        {/* Topic Input */}
+        <div className="mb-6">
+          <label className="block text-lg font-medium mb-2 text-gray-300">
+            Or Enter a Topic
+          </label>
           <input
             type="text"
             value={lessonTopic}
             onChange={(e) => setLessonTopic(e.target.value)}
-            className="w-full bg-gray-700 text-white p-2 rounded-md"
             placeholder="Enter a lesson topic..."
+            className="w-full p-3 rounded-md bg-white text-black border border-gray-300 hover:border-black focus:ring-2 focus:ring-greenAccent focus:outline-none"
           />
         </div>
 
-        {/* Dropdown for Teaching Style */}
-        <div className="mb-4">
-          <label className="block text-sm font-medium mb-1">Teaching Style</label>
-          <select
-            value={teachingStyle}
-            onChange={(e) => setTeachingStyle(e.target.value)}
-            className="w-full bg-gray-700 text-white p-2 rounded-md"
-          >
-            <option value="Simple">Simple (3 Lessons)</option>
-            <option value="Intermediate">Intermediate (5 Lessons)</option>
-            <option value="Advanced">Advanced (10 Lessons)</option>
-          </select>
+        
+
+        {/* AI Model Dropdown */}
+        <div className="mb-8">
+          <label className="block text-lg font-medium mb-2 text-gray-300">
+            Select AI Model
+          </label>
+          <AImodelSelect value={aiModel} onChange={setAiModel} />
         </div>
 
-        {/* Dropdown for AI Model Selection */}
-        <div className="mb-4">
-          <label className="block text-sm font-medium mb-1">Select AI Model</label>
-          <select
-            value={aiModel}
-            onChange={(e) => setAiModel(e.target.value)}
-            className="w-full bg-gray-700 text-white p-2 rounded-md"
-          >
-            <option value="gpt">GPT</option>
-            <option value="llama">Llama</option>
-            <option value="gemini">Gemini</option>
-            <option value="deepseek">Deepseek</option>
-          </select>
-        </div>
-
-        {/* Generate Lesson Button */}
+        {/* Button */}
         <button
           onClick={handleGenerateLesson}
           disabled={uploading}
-          className={`w-full ${uploading ? "bg-gray-600" : "bg-green-500 hover:bg-green-600"} text-white font-semibold py-2 rounded-md transition`}
+          className={`w-full py-3 px-6 rounded-md font-semibold transition-all duration-200 ${uploading
+            ? "bg-greenAccent opacity-50 text-black cursor-not-allowed"
+            : "bg-greenAccent hover:scale-105 text-black"
+            }`}
         >
           {uploading ? "Generating..." : "Generate Lesson"}
         </button>
@@ -192,4 +279,4 @@ export default function UploadPage() {
   );
 }
 
-export const runtime = "nodejs"; // Ensure Node.js runtime
+export const runtime = "nodejs";

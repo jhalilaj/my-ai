@@ -98,22 +98,6 @@ const UserDashboard: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-customDark text-white p-6">
-      {/* 👤 User Info */}
-      <div className="flex items-center bg-greenAccent p-6 rounded-lg shadow-md mb-6">
-        {session?.user?.image && (
-          <img
-            src={session.user.image}
-            alt="User Profile"
-            className="w-12 h-12 rounded-full border-2 border-white"
-          />
-        )}
-        <div className="ml-4">
-          <h1 className="text-2xl font-bold text-black">
-            Hello, {session?.user?.name || "User"}!
-          </h1>
-          <p className="text-black text-sm">Let's continue learning and track your progress</p>
-        </div>
-      </div>
 
       {/* 📊 Progress Overview */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -140,8 +124,8 @@ const UserDashboard: React.FC = () => {
             <p className="text-2xl">
               {topics.length > 0
                 ? Math.round(
-                    topics.reduce((acc, topic) => acc + topic.averageScore, 0) / topics.length
-                  )
+                  topics.reduce((acc, topic) => acc + topic.averageScore, 0) / topics.length
+                )
                 : 0}
               %
             </p>
@@ -187,24 +171,26 @@ const UserDashboard: React.FC = () => {
                 <div className="flex space-x-3">
                   {/* ✏️ Edit Button */}
                   <button
-                    className="p-2 bg-blue-500 text-white rounded-md hover:bg-blue-400 transition"
+                    className="p-2 bg-[#27d63c] text-black rounded-md hover:opacity-90 transition"
                     onClick={() => startEditing(topic.id, topic.title)}
                   >
                     <FaEdit />
                   </button>
 
                   <button
-                    className="px-4 py-2 bg-blue-500 text-white font-bold rounded-md hover:bg-blue-400 transition"
+                    className="px-4 py-2 bg-[#27d63c] text-black font-bold rounded-md hover:opacity-90 transition"
                     onClick={() => router.push(`/chatbot?topicId=${topic.id}&lesson=lesson1`)}
                   >
                     Continue Learning
                   </button>
+
                   <button
-                    className="px-4 py-2 bg-gray-600 text-white font-bold rounded-md hover:bg-gray-500 transition"
+                    className="px-4 py-2 bg-white text-black font-bold rounded-md hover:bg-gray-200 transition"
                     onClick={() => router.push(`/TopicProgress?topicId=${topic.id}`)}
                   >
                     Check Progress
                   </button>
+
 
                   {/* ❌ Square Delete Button */}
                   <button

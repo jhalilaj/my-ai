@@ -105,8 +105,7 @@ const TopicProgress: React.FC = () => {
         <h2 className="text-xl font-semibold mb-4">Lesson Breakdown</h2>
         <div className="space-y-4">
           {lessons.map((lesson) => (
-            <div key={lesson._id} className="bg-gray-800 p-4 rounded-lg shadow-md">
-              {/* Lesson Title & Average Score */}
+            <div key={lesson._id} className="bg-customGray p-4 rounded-lg shadow-md">
               <div
                 className="flex justify-between items-center cursor-pointer"
                 onClick={() => setExpandedLesson(expandedLesson === lesson._id ? null : lesson._id)}
@@ -114,7 +113,9 @@ const TopicProgress: React.FC = () => {
                 <div>
                   <h3 className="text-lg font-bold">{lesson.title}</h3>
                   <p className="text-sm text-gray-400">
-                    {lesson.tests.length > 0 ? `Past Tests: ${lesson.tests.length}` : "No tests available"}
+                    {lesson.tests.length > 0
+                      ? `Past Tests: ${lesson.tests.length}`
+                      : "No tests available"}
                   </p>
                   <p className="text-sm text-green-400 font-semibold">
                     Average Score: {lesson.avgScore}%
@@ -125,25 +126,31 @@ const TopicProgress: React.FC = () => {
 
               {/* Test Results */}
               {expandedLesson === lesson._id && lesson.tests.length > 0 && (
-                <div className="mt-2 p-3 bg-gray-700 rounded-lg">
+                <div className="mt-2 p-3 bg-customGray rounded-lg">
                   <h4 className="text-lg font-bold mb-2">Past Test Results:</h4>
                   <div className="space-y-2">
                     {lesson.tests.map((test: any, index: number) => (
-                      <div key={test._id || index} className="bg-gray-600 p-3 rounded-md flex justify-between items-center">
-                        <p className="flex items-center text-sm">
-                          📅 {test.createdAt ? new Date(test.createdAt).toLocaleDateString() : "Unknown"}
-                        </p>
-                        <p className="flex items-center text-sm">
-                          ✅ Percentage: {test.percentage !== undefined ? `${test.percentage.toFixed(1)}%` : "Not taken yet"}
-                        </p>
-
-                        <button
-                          className="px-4 py-2 bg-blue-500 text-white font-bold rounded-md hover:bg-blue-400 transition"
-                          onClick={() => setSelectedTest(test)}
-                        >
-                          View Test
-                        </button>
-                      </div>
+                      <div
+                      key={test._id || index}
+                      className="bg-black p-3 rounded-md flex justify-between items-center"
+                    >
+                      <p className="flex items-center text-sm text-gray-300 gap-2">
+                        Date {test.createdAt ? new Date(test.createdAt).toLocaleDateString() : "Unknown"}
+                      </p>
+                    
+                      <p className="flex items-center text-sm text-green-400 font-semibold gap-1">
+                        Score:{" "}
+                        {test.percentage !== undefined ? `${test.percentage.toFixed(1)}%` : "Not taken yet"}
+                      </p>
+                    
+                      <button
+                        className="px-4 py-2 bg-[#27d63c]  text-white font-bold rounded-md hover:bg-green-500 transition"
+                        onClick={() => setSelectedTest(test)}
+                      >
+                        View Test
+                      </button>
+                    </div>
+                    
                     ))}
                   </div>
                 </div>
@@ -153,7 +160,7 @@ const TopicProgress: React.FC = () => {
         </div>
       </div>
 
-      {/* TestViewer for viewing past tests */}
+      {/* Test Viewer Overlay */}
       {selectedTest && (
         <div
           className="fixed top-0 left-0 w-full h-full bg-black bg-opacity-50 flex items-center justify-center"
