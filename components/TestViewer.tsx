@@ -19,13 +19,12 @@ const TestViewer: React.FC<TestViewerProps> = ({ test, onClose }) => {
   return (
     <div
       className="fixed top-0 left-0 w-full h-full bg-black bg-opacity-50 flex items-center justify-center"
-      onClick={onClose} // ✅ Close modal when clicking outside
+      onClick={onClose} 
     >
       <div
         className="bg-gray-900 text-white p-6 rounded-lg shadow-lg w-full max-w-3xl max-h-[90vh] overflow-y-auto custom-scrollbar"
-        onClick={(e) => e.stopPropagation()} // ✅ Prevent closing when clicking inside
+        onClick={(e) => e.stopPropagation()}
       >
-        {/* Close Button */}
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-xl font-bold">Test Review</h3>
           <button
@@ -36,11 +35,7 @@ const TestViewer: React.FC<TestViewerProps> = ({ test, onClose }) => {
           </button>
         </div>
 
-        {/* Test Score */}
-
         <p>📊 Percentage: {test.percentage.toFixed(2)}%</p>
-
-        {/* Questions & Answers */}
         <div className="mt-4 space-y-6">
           {test.questions.map((q, qIndex) => {
             const userAnswer = test.userAnswers[qIndex];
@@ -65,13 +60,11 @@ const TestViewer: React.FC<TestViewerProps> = ({ test, onClose }) => {
                       >
                         {option}
                         {isCorrect && isUserAnswer && " ✅"}
-                        {!isCorrect && isUserAnswer && " ❌"}
+                        {!isCorrect && isUserAnswer && " "}
                       </div>
                     );
                   })}
                 </div>
-
-                {/* Display User Answer for Theory and Practical */}
                 {(q.type === "theory" || q.type === "practical") && (
                   <div className="mt-4">
                     <p className="text-sm text-blue-400">
@@ -80,7 +73,6 @@ const TestViewer: React.FC<TestViewerProps> = ({ test, onClose }) => {
                   </div>
                 )}
 
-                {/* Show feedback for theory and practical questions */}
                 {feedback && (
                   <div className="mt-4">
                     <p className="text-sm text-blue-400">

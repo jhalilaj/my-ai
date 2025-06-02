@@ -3,7 +3,6 @@ import connectDB from "@/lib/mongodb";
 import Lesson from "@/models/Lesson";
 import Topic from "@/models/Topic";
 
-// OpenRouter API key (used for Llama, Gemini, Deepseek, and GPT)
 const openrouterApiKey = "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";
 
 export async function POST(req: Request) {
@@ -16,17 +15,16 @@ export async function POST(req: Request) {
     console.log("➡️ Data received:", { topicId, content, depth, aiModel });
 
     if (!topicId || !content || !depth || !aiModel) {
-      console.log("❌ Invalid input data");
+      console.log(" Invalid input data");
       return NextResponse.json({ error: "Invalid input data" }, { status: 400 });
     }
 
     const topic = await Topic.findById(topicId);
     if (!topic) {
-      console.log("❌ Topic not found");
+      console.log(" Topic not found");
       return NextResponse.json({ error: "Topic not found" }, { status: 404 });
     }
 
-    // Merge content from multiple files if content is an array
     let extractedText = "";
     if (Array.isArray(content)) {
       console.log("📂 Multiple file inputs detected. Extracting text from each...");
@@ -36,7 +34,7 @@ export async function POST(req: Request) {
         if (fileData.success && fileData.content) {
           extractedText += "\n\n" + fileData.content;
         } else {
-          console.error(`❌ Failed to extract content from ${filePath}`);
+          console.error(` Failed to extract content from ${filePath}`);
         }
       }
     } else if (typeof content === "string" && content.startsWith("/uploads/")) {
@@ -46,7 +44,7 @@ export async function POST(req: Request) {
       if (fileData.success && fileData.content) {
         extractedText = fileData.content;
       } else {
-        console.error("❌ Failed to extract content from file.");
+        console.error(" Failed to extract content from file.");
         return NextResponse.json({ error: "Failed to read file content." }, { status: 500 });
       }
     } else {
@@ -55,7 +53,6 @@ export async function POST(req: Request) {
 
     console.log("🧠 Extracted Text Preview:", extractedText.substring(0, 500));
 
-    // Decide which AI API to use
     let usedAI = "";
     let sectionResponseData: string = "[]";
     const sectionPrompt = `
@@ -70,7 +67,6 @@ export async function POST(req: Request) {
       Only return the section list.
     `;
 
-    // Helper to call OpenRouter
     async function callOpenRouter(model: string, prompt: string | { role: string; content: any }[]) {
       const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
@@ -91,7 +87,6 @@ export async function POST(req: Request) {
       return json.choices?.[0]?.message?.content || "";
     }
 
-    // Generate sections
     if (aiModel === "llama") {
       usedAI = "Llama";
       sectionResponseData = await callOpenRouter(
@@ -112,7 +107,6 @@ export async function POST(req: Request) {
       sectionResponseData = await callOpenRouter("openai/gpt-4o", sectionPrompt);
     }
 
-    // Extract and parse the JSON array from the AI response
     const jsonMatch = sectionResponseData.match(/```json\s*([\s\S]*?)\s*```/i);
     const jsonString = jsonMatch
       ? jsonMatch[1].trim()
@@ -125,7 +119,7 @@ export async function POST(req: Request) {
         throw new Error("Response is not a valid JSON array");
       }
     } catch (error) {
-      console.error("❌ Error parsing sections:", error);
+      console.error(" Error parsing sections:", error);
       return NextResponse.json(
         { error: "Failed to generate sections due to AI response format." },
         { status: 500 }
@@ -134,7 +128,6 @@ export async function POST(req: Request) {
 
     console.log(`✅ Sections Generated (${usedAI}): ${sections.length}`);
 
-    // Generate lessons for each section
     const lessons: string[] = [];
     for (let i = 0; i < sections.length; i++) {
       console.log(`📝 Generating Lesson ${i + 1} (${usedAI}): ${sections[i]}`);
@@ -167,7 +160,6 @@ export async function POST(req: Request) {
         lessonContent = await callOpenRouter("openai/gpt-4o", lessonPrompt);
       }
 
-      // Save the generated lesson in the database
       const lesson = new Lesson({
         topicId,
         lessonNumber: i + 1,
@@ -185,7 +177,7 @@ export async function POST(req: Request) {
     console.log(`✅ Lessons Generated Successfully using ${usedAI} API.`);
     return NextResponse.json({ success: true, lessons });
   } catch (error) {
-    console.error("❌ Lesson Generation Error:", error);
+    console.error(" Lesson Generation Error:", error);
     return NextResponse.json({ error: "Failed to generate lessons." }, { status: 500 });
   }
 }

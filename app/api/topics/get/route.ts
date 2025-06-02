@@ -10,7 +10,7 @@ export async function GET(req: Request) {
   const session = await auth();
 
   if (!session || !session.user?.email) {
-    console.error("❌ User not authenticated");
+    console.error(" User not authenticated");
     return NextResponse.json({ error: "User not authenticated" }, { status: 401 });
   }
 
@@ -25,7 +25,6 @@ export async function GET(req: Request) {
       console.log(`✅ Found ${topics.length} topics.`);
     }
 
-    // ✅ Ensure _id is converted to a string
     const formattedTopics = topics.map((topic: any) => ({
       id: topic._id?.toString(),
       title: topic.title,
@@ -37,7 +36,7 @@ export async function GET(req: Request) {
     console.log("📋 Sending topics:", formattedTopics);
     return NextResponse.json({ success: true, topics: formattedTopics });
   } catch (error) {
-    console.error("❌ Error fetching topics:", error);
+    console.error(" Error fetching topics:", error);
     return NextResponse.json({ error: "Failed to fetch topics" }, { status: 500 });
   }
 }

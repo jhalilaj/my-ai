@@ -1,12 +1,11 @@
 import { NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
-import mammoth from "mammoth"; // ✅ DOCX to text converter
+import mammoth from "mammoth";
 import pdf from 'pdf-parse/lib/pdf-parse'
 
 export async function GET(req: Request) {
   try {
-    // Get the file path from the query parameters
     const { searchParams } = new URL(req.url);
     let filePath = searchParams.get("filePath");
 
@@ -30,12 +29,11 @@ export async function GET(req: Request) {
       const result = await mammoth.extractRawText({ buffer });
       fileContent = result.value || "Could not extract text.";
     } else if (filePath.endsWith(".pdf")) {
-      // Extract text from PDF using pdf-parse
       const buffer = fs.readFileSync(fullPath);
       const result = await pdf(buffer);
       fileContent = result.text || "Could not extract text from PDF.";
     } else {
-      // Otherwise, read as plain text  
+    
       fileContent = fs.readFileSync(fullPath, "utf-8");
     }
 

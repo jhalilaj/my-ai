@@ -11,7 +11,7 @@ interface ITestResult extends Document {
 }
 
 const TestResultSchema = new Schema<ITestResult>({
-  userId: { type: String, required: true }, // Store user email
+  userId: { type: String, required: true }, 
   lessonId: { type: mongoose.Schema.Types.ObjectId, ref: "Lesson", required: true },
   testId: { type: mongoose.Schema.Types.ObjectId, ref: "Test", required: true },
   userAnswers: { type: [String], required: true },

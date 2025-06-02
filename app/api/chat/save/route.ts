@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import Chat from "@/models/Chat";
-import { auth } from "@/auth"; // Ensure authentication
+import { auth } from "@/auth"; 
 
 export async function POST(req: Request) {
     await connectDB();
@@ -18,13 +18,12 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "Invalid request data" }, { status: 400 });
         }
 
-        // Find existing chat for this user & lesson
         let chat = await Chat.findOne({ userId: session.user.email, lessonId });
 
         if (!chat) {
             chat = new Chat({ userId: session.user.email, lessonId, messages });
         } else {
-            chat.messages.push(...messages); // ✅ Append new messages to lesson chat
+            chat.messages.push(...messages); 
         }
 
         await chat.save();

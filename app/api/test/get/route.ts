@@ -13,7 +13,6 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Lesson ID is required" }, { status: 400 });
     }
 
-    // ✅ Fetch test by lessonId
     const test = await Test.findOne({ lessonId });
 
     if (!test) {

@@ -8,7 +8,6 @@ const Navbar = async () => {
   return (
     <header className="px-5 bg-greenAccent shadow-lg font-work-sans border-b-4 border-black">
       <nav className="flex justify-between items-center">
-        {/* Left Section */}
         <div className="flex items-center gap-5 rounded-lg p-2 bg-greenAccent">
           <Link href="/">
             <Image
@@ -20,8 +19,6 @@ const Navbar = async () => {
             />
           </Link>
         </div>
-
-        {/* Right Section */}
         <div className="flex items-center gap-5">
           {session && session.user ? (
             <>

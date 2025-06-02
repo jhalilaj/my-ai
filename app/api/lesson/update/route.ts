@@ -12,11 +12,10 @@ export async function PATCH(req: { json: () => PromiseLike<{ lessonId: any; comp
       return NextResponse.json({ error: "Missing lessonId or Missing completed status" }, { status: 400 });
     }
 
-    // Find and update the lesson by its ID
     const updatedLesson = await Lesson.findByIdAndUpdate(
-      lessonId, // Find by lesson ID
-      { completed }, // Update the completed status
-      { new: true } // Return the updated document
+      lessonId,
+      { completed }, 
+      { new: true }
     );
 
     if (!updatedLesson) {

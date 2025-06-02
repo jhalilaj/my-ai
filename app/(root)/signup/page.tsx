@@ -33,14 +33,11 @@ const SignupPage = () => {
         },
         body: JSON.stringify({ email, password, confirmPassword }),
       });
-
       const data = await res.json();
-
       if (res.ok) {
-        // Redirect to login page if signup is successful
         window.location.href = "/login";
       } else {
-        // Show error message from API
+
         setError(data.error || "An error occurred");
       }
     } catch (err) {
@@ -48,7 +45,6 @@ const SignupPage = () => {
     }
   };
 
-  // Auto-scroll to bottom on mount
   useEffect(() => {
     window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
   }, []);
@@ -56,7 +52,7 @@ const SignupPage = () => {
   return (
     <main className="min-h-screen flex items-center justify-center bg-primary text-white px-4">
       <div className="w-full max-w-4xl flex flex-col md:flex-row border-4 border-greenAccent rounded-xl shadow-lg overflow-hidden">
-        {/* Left Section */}
+
         <div className="w-full md:w-1/2 p-8 space-y-6 bg-customDark z-20">
           <h1 className="text-4xl font-bold">
             Join <span className="text-greenAccent">AI Tutor</span>
@@ -91,14 +87,12 @@ const SignupPage = () => {
           </p>
         </div>
 
-        {/* Divider */}
         <div className="hidden md:block w-[2px] bg-white/20 blur-lg" />
 
-        {/* Right Section */}
         <div className="w-full md:w-1/2 p-8 bg-white text-black space-y-4 z-20">
           <h2 className="text-2xl font-semibold mb-2">Or sign up with Email</h2>
 
-          {error && <p className="text-red-500">{error}</p>} {/* Display error message */}
+          {error && <p className="text-red-500">{error}</p>}
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <input

@@ -17,19 +17,16 @@ export async function GET(req: Request) {
   try {
     await connectDB();
 
-    // Get logged-in user session
     const session = await auth();
     if (!session || !session.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Find user in MongoDB using email
     const user = await User.findOne({ email: session.user.email });
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    // Retrieve only the authenticated user's files
     const files = await FileModel.find({ userId: user._id });
 
     return NextResponse.json({ success: true, files });
@@ -39,4 +36,4 @@ export async function GET(req: Request) {
   }
 }
 
-export default FileModel; // ✅ Ensure default export
+export default FileModel;

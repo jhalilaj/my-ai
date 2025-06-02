@@ -4,7 +4,7 @@ import mongoose from "mongoose";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 import { auth } from "@/auth";
-import User from "@/models/User"; // Import User model
+import User from "@/models/User";
 
 const FileSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
@@ -45,7 +45,6 @@ export async function POST(req: Request) {
     const filePath = path.join(uploadDir, file.name);
     await writeFile(filePath, buffer);
 
-    // ✅ Store metadata in MongoDB & retrieve file ID
     const newFile = await FileModel.create({
       userId: user._id,
       fileName: file.name,

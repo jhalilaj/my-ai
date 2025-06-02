@@ -2,13 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import Topic from "@/models/Topic";
 
-// ✅ Named export for DELETE request (App Router requires this)
 export async function DELETE(req: NextRequest) {
   try {
-    await connectDB(); // Ensure database connection
+    await connectDB(); 
     console.log("🚀 Database connected");
 
-    const { id } = await req.json(); // Read JSON body
+    const { id } = await req.json(); 
     console.log("🔍 Received topic ID:", id);
 
     if (!id) {
@@ -26,7 +25,7 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ success: true, message: "Topic deleted successfully" }, { status: 200 });
 
   } catch (error) {
-    console.error("❌ Error deleting topic:", error);
+    console.error(" Error deleting topic:", error);
     return NextResponse.json({ success: false, message: "Internal Server Error" }, { status: 500 });
   }
 }

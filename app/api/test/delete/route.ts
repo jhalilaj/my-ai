@@ -22,7 +22,7 @@ export async function DELETE(req: Request) {
     console.log(`🗑️ Deleted test with ID: ${testId}`);
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("❌ Error deleting test:", error);
+    console.error(" Error deleting test:", error);
     return NextResponse.json({ error: "Failed to delete test." }, { status: 500 });
   }
 }

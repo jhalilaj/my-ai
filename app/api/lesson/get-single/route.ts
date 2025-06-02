@@ -12,8 +12,7 @@ export async function GET(req: Request) {
         if (!lessonId) {
             return NextResponse.json({ error: "Missing lessonId" }, { status: 400 });
         }
-
-        // ✅ Fetch lesson content by ID
+    
         const lesson = await Lesson.findById(lessonId);
 
         return NextResponse.json({ success: true, lesson });

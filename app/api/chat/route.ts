@@ -60,7 +60,7 @@ async function callOpenRouterImage(prompt: string): Promise<string> {
 
 export async function POST(request: Request) {
   try {
-    // Connect to your database
+
     await connectDB();
 
     const { prompt, lessonId } = await request.json();
@@ -72,8 +72,6 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
-
-    // Fetch lesson and topic
     const lesson = await Lesson.findById(lessonId);
     if (!lesson) {
       return NextResponse.json({ error: "Lesson not found" }, { status: 404 });
@@ -83,11 +81,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Topic not found" }, { status: 404 });
     }
 
-    // Determine which model to use
     const chosenModel = topic.aiModel || "gpt";
     console.log("▶️  Chosen AI model for this topic:", chosenModel);
 
-    // Detect image-generation requests
     const isImageRequest = /generate an image|show me an image|create an image/i.test(
       prompt
     );
@@ -97,7 +93,7 @@ export async function POST(request: Request) {
         const imageUrl = await callOpenRouterImage(prompt);
         return NextResponse.json({ image: imageUrl });
       } catch (err) {
-        console.error("❌ Image generation error:", err);
+        console.error(" Image generation error:", err);
         return NextResponse.json(
           { error: "Error generating image." },
           { status: 500 }
@@ -105,7 +101,6 @@ export async function POST(request: Request) {
       }
     }
 
-    // Otherwise, generate a text response via the chosen model
     let assistantMessage = "";
     switch (chosenModel) {
       case "llama":
@@ -141,7 +136,7 @@ export async function POST(request: Request) {
     console.log("💬 Assistant response:", assistantMessage);
     return NextResponse.json({ message: assistantMessage });
   } catch (error) {
-    console.error("❌ Chat API Error:", error);
+    console.error(" Chat API Error:", error);
     return NextResponse.json(
       { error: "Something went wrong." },
       { status: 500 }

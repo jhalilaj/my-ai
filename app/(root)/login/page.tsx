@@ -14,7 +14,6 @@ const LoginPage = () => {
   const emailIsValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   const canSubmit = emailIsValid && password;
 
-  // ✅ Auto scroll to bottom on load
   useEffect(() => {
     window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
   }, []);
@@ -23,10 +22,8 @@ const LoginPage = () => {
     <main className="min-h-screen flex items-center justify-center bg-primary px-4">
       <div className="w-full max-w-md bg-white border-4 border-greenAccent rounded-xl shadow-lg p-8 text-black space-y-6">
 
-        {/* Title */}
         <h1 className="text-3xl font-bold text-center">Login to AI Tutor</h1>
 
-        {/* Email/password form */}
         <form className="flex flex-col gap-4">
           <input
             type="email"
@@ -55,7 +52,6 @@ const LoginPage = () => {
             </button>
           </div>
 
-          {/* Login button with tooltip */}
           <div className="relative group w-full">
             <button
               type="submit"
@@ -81,10 +77,8 @@ const LoginPage = () => {
           </div>
         </form>
 
-        {/* Divider */}
         <div className="h-px bg-gray-300 my-2" />
 
-        {/* Social login buttons */}
         <div className="flex flex-col gap-4">
           <button
             onClick={() => signIn("google")}
@@ -105,7 +99,6 @@ const LoginPage = () => {
           </button>
         </div>
 
-        {/* Footer link */}
         <p className="text-sm text-center text-gray-600">
           Don’t have an account?{" "}
           <Link href="/signup" className="text-greenAccent hover:underline font-semibold">

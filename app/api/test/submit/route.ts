@@ -1,4 +1,3 @@
-// /app/api/test/submit/route.ts
 export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
@@ -8,12 +7,10 @@ import Lesson from "@/models/Lesson";
 import Topic from "@/models/Topic";
 import { auth } from "@/auth";
 
-// Single OpenRouter API key for all models
 const openrouterApiKey =
   process.env.OPENROUTER_API_KEY ||
   "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";
 
-// Helper to call OpenRouter for any model
 async function callOpenRouter(model: string, prompt: string): Promise<string> {
   const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
     method: "POST",
@@ -47,32 +44,32 @@ export async function POST(req: Request) {
 
     const session = await auth();
     if (!session?.user?.email) {
-      console.error("❌ Unauthorized user");
+      console.error(" Unauthorized user");
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
     console.log("🟢 Authenticated user:", session.user.email);
 
     const { testId, lessonId, userAnswers } = await req.json();
     if (!testId || !lessonId || !Array.isArray(userAnswers)) {
-      console.error("❌ Invalid input data", { testId, lessonId, userAnswers });
+      console.error(" Invalid input data", { testId, lessonId, userAnswers });
       return NextResponse.json({ error: "Invalid input data" }, { status: 400 });
     }
 
     const test = await Test.findById(testId);
     if (!test) {
-      console.error("❌ Test not found:", testId);
+      console.error(" Test not found:", testId);
       return NextResponse.json({ error: "Test not found" }, { status: 404 });
     }
 
     const lesson = await Lesson.findById(lessonId);
     if (!lesson) {
-      console.error("❌ Lesson not found:", lessonId);
+      console.error(" Lesson not found:", lessonId);
       return NextResponse.json({ error: "Lesson not found" }, { status: 404 });
     }
 
     const topic = await Topic.findById(lesson.topicId);
     if (!topic) {
-      console.error("❌ Topic not found for lesson:", lessonId);
+      console.error(" Topic not found for lesson:", lessonId);
       return NextResponse.json({ error: "Topic not found" }, { status: 404 });
     }
     const chosenModel = topic.aiModel || "gpt";
@@ -92,7 +89,6 @@ export async function POST(req: Request) {
       const question = test.questions[i];
       const userAnswer = userAnswers[i];
 
-      // MCQ scoring
       if (question.type === "mcq") {
         const correctIndex = test.correctAnswers[i];
         if (userAnswer === correctIndex) {
@@ -100,7 +96,6 @@ export async function POST(req: Request) {
         }
       }
 
-      // Theory or Practical evaluation via OpenRouter
       if (question.type === "theory" || question.type === "practical") {
         const evaluationPrompt = `
       You are a tutor evaluating a student's answer.
@@ -147,7 +142,7 @@ export async function POST(req: Request) {
           try {
             parsedEval = JSON.parse(sanitized);
           } catch (err) {
-            console.error(`❌ Error parsing AI response for question ${i}:`, err);
+            console.error(` Error parsing AI response for question ${i}:`, err);
             parsedEval = { feedback: "Error parsing feedback", score: 0 };
           }
 
@@ -160,7 +155,7 @@ export async function POST(req: Request) {
             score: parsedEval.score,
           });
         } catch (err) {
-          console.error(`❌ AI Evaluation Error for question ${i}:`, err);
+          console.error(` AI Evaluation Error for question ${i}:`, err);
         }
       }
     }
@@ -214,7 +209,7 @@ export async function POST(req: Request) {
     });
 
   } catch (error) {
-    console.error("❌ Test Submission Error:", error);
+    console.error(" Test Submission Error:", error);
     return NextResponse.json({ error: "Failed to submit test." }, { status: 500 });
   }
 }

@@ -3,8 +3,8 @@ import mongoose, { Schema, Document } from "mongoose";
 interface Question {
   type: "mcq" | "theory" | "practical";
   question: string;
-  options?: string[];             // only for mcq
-  correctAnswer: string;         // "A"/"B"/"C"/"D" for mcq, or actual answer for theory/practical
+  options?: string[];      
+  correctAnswer: string;        
 }
 
 interface Feedback {
@@ -29,7 +29,7 @@ export interface ITest extends Document {
 const QuestionSchema = new Schema<Question>({
   type: { type: String, enum: ["mcq", "theory", "practical"], required: true },
   question: { type: String, required: true },
-  options: [String], // optional
+  options: [String],
   correctAnswer: { type: String, required: true },
 });
 
@@ -44,8 +44,8 @@ const FeedbackSchema = new Schema<Feedback>({
 const TestSchema = new Schema<ITest>({
   lessonId: { type: mongoose.Schema.Types.ObjectId, ref: "Lesson", required: true },
   questions: [QuestionSchema],
-  correctAnswers: [Schema.Types.Mixed], // Number for mcq, null for others
-  userAnswers: [Schema.Types.Mixed],    // Number (mcq) or string (text)
+  correctAnswers: [Schema.Types.Mixed],
+  userAnswers: [Schema.Types.Mixed],  
   score: { type: Number, default: null },
   percentage: { type: Number, default: null },
   feedback: [FeedbackSchema],

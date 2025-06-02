@@ -12,8 +12,6 @@ export async function POST(req: Request) {
     if (!session || !session.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-
-    // Expect topicTitle, teachingStyle, fileId, and aiModel from the request
     const { topicTitle, teachingStyle, fileId, aiModel } = await req.json();
 
     if (!teachingStyle) {
@@ -22,9 +20,7 @@ export async function POST(req: Request) {
 
     const fileIds = Array.isArray(fileId) ? fileId : fileId ? [fileId] : [];
 
-    // Determine a final title from user input or fallback to file name
     let finalTitle = topicTitle;
-
     if (!finalTitle && fileIds.length > 0) {
       try {
         const firstFileId = fileIds[0];
@@ -32,13 +28,13 @@ export async function POST(req: Request) {
 
         const fileDoc = await File.findById(firstFileId);
         if (!fileDoc) {
-          console.warn("❌ No file found in DB with this ID.");
+          console.warn(" No file found in DB with this ID.");
         } else {
           console.log("✅ Found file in DB:", fileDoc.fileName);
           finalTitle = fileDoc.fileName.replace(/\.[^/.]+$/, "");
         }
       } catch (fileErr) {
-        console.error("❌ Error during file title lookup:", fileErr);
+        console.error(" Error during file title lookup:", fileErr);
       }
     }
 
@@ -46,7 +42,6 @@ export async function POST(req: Request) {
       finalTitle = "Untitled Topic";
     }
 
-    // Create new topic with the selected AI model
     const newTopic = new Topic({
       userId: session.user.email,
       title: finalTitle,
@@ -56,7 +51,7 @@ export async function POST(req: Request) {
       averageScore: 0,
       lessons: [],
       fileIds,
-      aiModel: aiModel || "gpt", // Store the chosen AI model (default to GPT)
+      aiModel: aiModel || "gpt",
     });
 
     await newTopic.save();
@@ -64,7 +59,7 @@ export async function POST(req: Request) {
     console.log("✅ Topic Created:", newTopic._id);
     return NextResponse.json({ success: true, topicId: newTopic._id });
   } catch (error) {
-    console.error("❌ Error creating topic:", error);
+    console.error(" Error creating topic:", error);
     return NextResponse.json({ error: "Failed to create topic" }, { status: 500 });
   }
 }

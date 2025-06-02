@@ -19,7 +19,7 @@ export async function GET(req: Request) {
         console.log("✅ Lessons found:", lessons.length);
         return NextResponse.json({ success: true, lessons });
     } catch (error) {
-        console.error("❌ Error fetching lessons:", error);
+        console.error(" Error fetching lessons:", error);
         return NextResponse.json({ error: "Failed to fetch lessons" }, { status: 500 });
     }
 }

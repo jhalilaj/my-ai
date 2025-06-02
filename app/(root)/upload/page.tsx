@@ -6,9 +6,6 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { SiOpenai } from "react-icons/si";
 
-/* --------------------------------------------
- *  AI Models with Icons
- * -------------------------------------------- */
 const aiModels = [
   {
     value: "gpt",
@@ -56,9 +53,6 @@ const aiModels = [
   },
 ];
 
-/* --------------------------------------------
- *  Custom AI Model Dropdown
- * -------------------------------------------- */
 function AImodelSelect({
   value,
   onChange,
@@ -117,16 +111,13 @@ function AImodelSelect({
   );
 }
 
-/* --------------------------------------------
- *  Upload Page Component
- * -------------------------------------------- */
 export default function UploadPage() {
   const { data: session } = useSession();
   const router = useRouter();
 
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [lessonTopic, setLessonTopic] = useState("");
-  const [teachingStyle, setTeachingStyle] = useState("Simple"); // Default teaching style
+  const [teachingStyle, setTeachingStyle] = useState("Simple"); 
   const [aiModel, setAiModel] = useState("gpt");
   const [uploading, setUploading] = useState(false);
 
@@ -212,7 +203,7 @@ export default function UploadPage() {
 
       router.push(`/chatbot?topicId=${topicId}&lesson=lesson1`);
     } catch (error) {
-      console.error("❌ Error generating lessons:", error);
+      console.error(" Error generating lessons:", error);
       alert("An error occurred while generating lessons.");
     } finally {
       setUploading(false);
@@ -226,7 +217,6 @@ export default function UploadPage() {
           <span className="text-white">Upload</span> Lesson or Enter a Topic
         </h2>
 
-        {/* File Upload Section */}
         <div className="mb-6">
           <label className="block text-lg font-medium mb-2 text-gray-300">
             Choose Files (PDF/DOCX)
@@ -239,7 +229,6 @@ export default function UploadPage() {
           />
         </div>
 
-        {/* Topic Input */}
         <div className="mb-6">
           <label className="block text-lg font-medium mb-2 text-gray-300">
             Or Enter a Topic
@@ -252,10 +241,6 @@ export default function UploadPage() {
             className="w-full p-3 rounded-md bg-white text-black border border-gray-300 hover:border-black focus:ring-2 focus:ring-greenAccent focus:outline-none"
           />
         </div>
-
-        
-
-        {/* AI Model Dropdown */}
         <div className="mb-8">
           <label className="block text-lg font-medium mb-2 text-gray-300">
             Select AI Model
@@ -263,7 +248,6 @@ export default function UploadPage() {
           <AImodelSelect value={aiModel} onChange={setAiModel} />
         </div>
 
-        {/* Button */}
         <button
           onClick={handleGenerateLesson}
           disabled={uploading}

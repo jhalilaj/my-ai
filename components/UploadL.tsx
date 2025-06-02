@@ -30,10 +30,10 @@ const UploadLesson = () => {
       if (response.ok) {
         setMessage("✅ " + data.message);
       } else {
-        setMessage("❌ " + data.error);
+        setMessage(" " + data.error);
       }
     } catch (error) {
-      setMessage("❌ Upload failed.");
+      setMessage(" Upload failed.");
     }
   };
 

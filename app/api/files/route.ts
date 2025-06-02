@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import mongoose from "mongoose";
-import { auth } from "@/auth"; // Use auth() for NextAuth session
-import File from "@/models/File"; // ✅ import from correct location
+import { auth } from "@/auth";
+import File from "@/models/File";
 
 const FileSchema = new mongoose.Schema({
   userId: { type: String, required: true },
@@ -17,7 +17,6 @@ export async function GET(req: Request) {
   try {
     await connectDB();
 
-    // Get logged-in user session
     const session = await auth();
     if (!session || !session.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -28,7 +27,6 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "User ID missing" }, { status: 400 });
     }
 
-    // Retrieve only the authenticated user's files
     const files = await FileModel.find({ userId });
 
     return NextResponse.json({ success: true, files });

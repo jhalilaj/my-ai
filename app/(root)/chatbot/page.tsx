@@ -19,7 +19,7 @@ const ChatPage: React.FC = () => {
   const [progress, setProgress] = useState(67);
   const [avgTestScore, setAvgTestScore] = useState<number | null>(null);
   const [isConfirmingCompletion, setIsConfirmingCompletion] = useState(false);
-  const [isSidebarVisible, setIsSidebarVisible] = useState(true);  // Track sidebar visibility
+  const [isSidebarVisible, setIsSidebarVisible] = useState(true);  
 
   useEffect(() => {
     if (topicId) {
@@ -44,7 +44,6 @@ const ChatPage: React.FC = () => {
     try {
       setTestLoading(true);
       const res = await fetch(`/api/test/get?lessonId=${lessons[currentLessonIndex]?._id}`);
-
       if (res.status === 404) {
         console.warn("Test not found, generating a new test");
         await generateTest();
@@ -114,15 +113,11 @@ const ChatPage: React.FC = () => {
 
   return (
     <div className="h-screen bg-customDark text-white flex">
-      {/* Sidebar */}
       <div
         className={`w-[350px] bg-customGray shadow-lg border-r border-gray-700 flex flex-col p-4 justify-between flex-grow-0 transition-all ${isSidebarVisible ? "translate-x-0" : "-translate-x-full"}`}
       >
-        {/* Sidebar Toggle Button */}
-
 
         <div>
-          {/* Progress Bar */}
           <div className="pt-2 flex flex-col items-center mb-6">
 
             <div className="font-bold text-lg mb-2">Your Progress</div>
@@ -136,7 +131,7 @@ const ChatPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Average Test Score */}
+
           <div className="flex flex-col items-center mb-6">
             <div className="font-bold text-lg mb-2">Average Test Score</div>
             <div className={`text-2xl font-bold ${avgTestScore !== null ? "text-greenAccent" : "text-gray-400"}`}>
@@ -144,7 +139,7 @@ const ChatPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Lesson List */}
+
           <div className="overflow-y-auto max-h-[350px] pr-2 custom-scrollbar">
             {lessons.map((lesson, index) => (
               <button
@@ -169,7 +164,7 @@ const ChatPage: React.FC = () => {
           <div className="flex justify-center mt-6">
             {lessons[currentLessonIndex]?.completed ? (
               <div className="w-full py-3 text-center bg-gray-600 text-white font-bold rounded-md shadow-md">
-                ✅ COMPLETED
+                COMPLETED
               </div>
             ) : (
               <button
@@ -194,9 +189,8 @@ const ChatPage: React.FC = () => {
         </button>
       </div>
 
-      {/* Main Content */}
       <div className={`flex-1 flex flex-col h-full transition-all ${isSidebarVisible ? "ml-[0px]" : "ml-[-300]"}`}>
-        {/* Button to toggle sidebar */}
+
         <button
           onClick={toggleSidebar}
           className="absolute top-32 left-5 text-white bg-greenAccent rounded-full w-8 h-8 flex items-center justify-center z-10"
@@ -227,7 +221,7 @@ const ChatPage: React.FC = () => {
         )}
       </div>
 
-      {/* Complete Lesson Confirmation Popup */}
+
       {isConfirmingCompletion && (
         <div className="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50">
           <div className="bg-white p-6 rounded-lg shadow-lg text-black">

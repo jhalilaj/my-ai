@@ -6,13 +6,10 @@ import connectDB from "@/lib/mongodb";
 import Test from "@/models/Test";
 import Lesson from "@/models/Lesson";
 import Topic from "@/models/Topic";
-
-// Single OpenRouter API key for all models
 const openrouterApiKey =
   process.env.OPENROUTER_API_KEY ||
   "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";
 
-// Helper to call OpenRouter for any model
 async function callOpenRouter(model: string, prompt: string): Promise<string> {
   const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
     method: "POST",
@@ -39,34 +36,26 @@ async function callOpenRouter(model: string, prompt: string): Promise<string> {
 }
 
 export async function POST(req: Request) {
-  // Connect to MongoDB
   await connectDB();
 
   try {
-    // Parse and validate input
     const { lessonId } = await req.json();
     if (!lessonId) {
-      console.error("❌ Missing lessonId");
+      console.error(" Missing lessonId");
       return NextResponse.json({ error: "Missing lessonId" }, { status: 400 });
     }
-
-    // Fetch lesson
     const lesson = await Lesson.findById(lessonId);
     if (!lesson) {
-      console.error("❌ Lesson not found for lessonId:", lessonId);
+      console.error(" Lesson not found for lessonId:", lessonId);
       return NextResponse.json({ error: "Lesson not found" }, { status: 404 });
     }
-
-    // Fetch topic to get aiModel
     const topic = await Topic.findById(lesson.topicId);
     if (!topic) {
-      console.error("❌ Topic not found for lessonId:", lessonId);
+      console.error(" Topic not found for lessonId:", lessonId);
       return NextResponse.json({ error: "Topic not found" }, { status: 404 });
     }
     const chosenModel = topic.aiModel || "gpt";
     console.log("▶️  Using model:", chosenModel);
-
-    // Build the prompt (unchanged from legacy)
     const prompt = `
     Analyze the lesson content and decide how many of each type of question to generate. Generate the questions accordingly:
         
@@ -91,59 +80,54 @@ export async function POST(req: Request) {
     - "options": (only for mcq, an array of 4 options)
     - "correctAnswer": "A"/"B"/"C"/"D" for mcq, or a sample answer for theory/practical
         `.trim();
-
-    // Generate via OpenRouter for all models
     let testRawResponse: string;
     switch (chosenModel) {
       case "llama":
-        console.log("🦙  Using Llama API for test generation.");
+        console.log("  Using Llama API for test generation.");
         testRawResponse = await callOpenRouter("meta-llama/llama-4-scout", prompt);
         break;
 
       case "gemini":
-        console.log("🤖  Using Gemini API for test generation.");
+        console.log("  Using Gemini API for test generation.");
         testRawResponse = await callOpenRouter("google/gemini-2.0-flash-001", prompt);
         break;
 
       case "deepseek":
-        console.log("🔍  Using Deepseek API for test generation.");
+        console.log("  Using Deepseek API for test generation.");
         testRawResponse = await callOpenRouter("deepseek/deepseek-chat-v3-0324", prompt);
         break;
 
       default:
-        console.log("✨  Routing GPT → openrouter.ai");
+        console.log("  Routing GPT → openrouter.ai");
         testRawResponse = await callOpenRouter("openai/gpt-4o", prompt);
         break;
     }
 
-    console.log("📝 Raw AI Test Response:", testRawResponse);
+    console.log("Raw AI Test Response:", testRawResponse);
 
-    // Extract JSON from fences if present
     const jsonMatch = testRawResponse.match(/```json\s*([\s\S]*?)\s*```/i);
     const jsonString = jsonMatch
       ? jsonMatch[1].trim()
       : testRawResponse.replace(/```/g, "").trim();
 
-    // Parse and validate
     let parsedTest: any[];
     try {
       parsedTest = JSON.parse(jsonString);
     } catch (err) {
-      console.error("❌ JSON parse error:", err);
+      console.error(" JSON parse error:", err);
       return NextResponse.json(
         { error: "AI returned invalid JSON" },
         { status: 500 }
       );
     }
     if (!Array.isArray(parsedTest) || parsedTest.length < 2) {
-      console.error("❌ Insufficient questions generated:", parsedTest);
+      console.error(" Insufficient questions generated:", parsedTest);
       return NextResponse.json(
         { error: "Failed to generate sufficient questions" },
         { status: 500 }
       );
     }
 
-    // Save to MongoDB
     const testDoc = new Test({
       lessonId,
       questions: parsedTest.map((q) => ({
@@ -160,7 +144,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ success: true, test: testDoc });
   } catch (error) {
-    console.error("❌ Test Generation Error:", error);
+    console.error(" Test Generation Error:", error);
     return NextResponse.json(
       { error: "Internal Server Error" },
       { status: 500 }

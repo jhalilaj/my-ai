@@ -104,7 +104,7 @@ const UserDashboard: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-customDark text-white p-6">
-      {/* 📊 Overview */}
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <div className="bg-customGray p-6 rounded-lg shadow-md flex items-center">
           <FaBookOpen className="text-greenAccent text-3xl mr-4" />
@@ -139,7 +139,6 @@ const UserDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* 📚 Topics */}
       <div className="mb-8">
         <h2 className="text-xl font-semibold mb-4">Your Topics</h2>
         {loading ? (
@@ -213,7 +212,6 @@ const UserDashboard: React.FC = () => {
         )}
       </div>
 
-      {/* 🧼 Custom Delete Modal */}
       {showDeleteModal && topicToDelete && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
           <div className="bg-white text-black p-6 rounded-xl shadow-xl w-full max-w-md">

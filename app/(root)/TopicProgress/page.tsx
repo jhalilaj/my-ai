@@ -14,7 +14,6 @@ const TopicProgress: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [selectedTest, setSelectedTest] = useState<any>(null);
 
-  // 🔴 Custom delete modal state
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [testToDelete, setTestToDelete] = useState<{ testId: string; lessonId: string } | null>(null);
 
@@ -32,7 +31,7 @@ const TopicProgress: React.FC = () => {
       const data = await res.json();
       setTopic(data.topic);
     } catch (error) {
-      console.error("❌ Error fetching topic:", error);
+      console.error(" Error fetching topic:", error);
     }
   };
 
@@ -69,7 +68,7 @@ const TopicProgress: React.FC = () => {
 
       setLessons(lessonsWithTests);
     } catch (error) {
-      console.error("❌ Error fetching lessons:", error);
+      console.error(" Error fetching lessons:", error);
     } finally {
       setLoading(false);
     }
@@ -107,7 +106,7 @@ const TopicProgress: React.FC = () => {
       setShowDeleteModal(false);
       setTestToDelete(null);
     } catch (error) {
-      console.error("❌ Error deleting test:", error);
+      console.error(" Error deleting test:", error);
       alert("Failed to delete test.");
     }
   };
@@ -131,7 +130,6 @@ const TopicProgress: React.FC = () => {
       <div className="min-h-screen bg-customDark text-white p-6">
         <h1 className="text-3xl font-bold mb-6">📊 Progress for {topic.title}</h1>
 
-        {/* Overall Average */}
         <div className="bg-customGray p-4 rounded-lg shadow-md mb-6">
           <p className="text-lg font-semibold">Overall Average Score: {overallAverageScore}%</p>
           <div className="w-full bg-gray-700 rounded-full h-4 mt-2">
@@ -145,7 +143,6 @@ const TopicProgress: React.FC = () => {
           </div>
         </div>
 
-        {/* Lessons List */}
         <h2 className="text-xl font-semibold mb-4">Lesson Breakdown</h2>
         <div className="space-y-4">
           {lessons.map((lesson) => (
@@ -171,8 +168,6 @@ const TopicProgress: React.FC = () => {
                   {expandedLesson === lesson._id ? "▲" : "▼"}
                 </span>
               </div>
-
-              {/* Tests Section */}
               {expandedLesson === lesson._id && lesson.tests.length > 0 && (
                 <div className="mt-2 p-3 bg-customGray rounded-lg">
                   <h4 className="text-lg font-bold mb-2">Past Test Results:</h4>
@@ -223,8 +218,6 @@ const TopicProgress: React.FC = () => {
           ))}
         </div>
       </div>
-
-      {/* Test Viewer Overlay */}
       {selectedTest && (
         <div
           className="fixed top-0 left-0 w-full h-full bg-black bg-opacity-50 flex items-center justify-center"
@@ -234,7 +227,6 @@ const TopicProgress: React.FC = () => {
         </div>
       )}
 
-      {/* Delete Modal */}
       {showDeleteModal && testToDelete && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
           <div className="bg-white text-black p-6 rounded-xl shadow-xl w-full max-w-md">

@@ -34,8 +34,6 @@ const TestComponent: React.FC<TestComponentProps> = ({ test }) => {
     }[]
   >([]);
   const [isTyping, setIsTyping] = useState(false);
-
-  // Load any persisted answers/score/feedback
   useEffect(() => {
     const storedA = localStorage.getItem(`answers-${test._id}`);
     const storedS = localStorage.getItem(`score-${test._id}`);
@@ -57,7 +55,6 @@ const TestComponent: React.FC<TestComponentProps> = ({ test }) => {
   };
 
   const handleSubmit = async () => {
-    // require all answers
     if (userAnswers.includes("") || userAnswers.includes(-1)) {
       setError("Please answer all questions before submitting.");
       return;
@@ -155,8 +152,6 @@ const TestComponent: React.FC<TestComponentProps> = ({ test }) => {
                 <p className="font-semibold mb-2">
                   {index + 1}. {q.question}
                 </p>
-
-                {/* MCQ options */}
                 {isMCQ &&
                   q.options?.map((opt, i) => (
                     <label
@@ -179,8 +174,6 @@ const TestComponent: React.FC<TestComponentProps> = ({ test }) => {
                       {opt}
                     </label>
                   ))}
-
-                {/* free-text answers */}
                 {(q.type === "theory" || q.type === "practical") && (
                   <textarea
                     className="w-full mt-2 p-2 rounded bg-gray-700 text-white"
@@ -191,8 +184,6 @@ const TestComponent: React.FC<TestComponentProps> = ({ test }) => {
                     disabled={submitted}
                   />
                 )}
-
-                {/* MCQ feedback */}
                 {submitted && isMCQ && (
                   <>
                     {isCorrect && (
@@ -206,8 +197,6 @@ const TestComponent: React.FC<TestComponentProps> = ({ test }) => {
                     )}
                   </>
                 )}
-
-                {/* Theory/Practical feedback */}
                 {submitted && fb && (
                   <div className="mt-2 p-3 rounded bg-gray-700">
                     <p className="text-sm text-blue-400">
@@ -222,14 +211,12 @@ const TestComponent: React.FC<TestComponentProps> = ({ test }) => {
             );
           })}
 
-          {/* Typing indicator */}
           {isTyping && (
             <div className="font-semibold text-gray-400 mb-6">
               AI-Tutor is checking your answers…
             </div>
           )}
 
-          {/* Submit vs. Results */}
           {!submitted ? (
             <button
               onClick={handleSubmit}

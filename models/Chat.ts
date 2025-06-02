@@ -1,8 +1,8 @@
 import mongoose from "mongoose";
 
 const ChatSchema = new mongoose.Schema({
-    userId: { type: String, required: true }, // Identify the user
-    lessonId: { type: String, required: true }, // ✅ Track lesson-specific chats
+    userId: { type: String, required: true },
+    lessonId: { type: String, required: true },
     messages: [
         {
             role: { type: String, enum: ["user", "assistant"], required: true },

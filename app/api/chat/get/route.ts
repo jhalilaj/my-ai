@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import Chat from "@/models/Chat";
-import { auth } from "@/auth"; // Ensure authentication
+import { auth } from "@/auth";
 
 export async function GET(req: Request) {
     await connectDB();
@@ -12,7 +12,7 @@ export async function GET(req: Request) {
     }
 
     const { searchParams } = new URL(req.url);
-    const lessonId = searchParams.get("lessonId"); // ✅ Get lessonId from request
+    const lessonId = searchParams.get("lessonId");
 
     if (!lessonId) {
         return NextResponse.json({ error: "Missing lessonId" }, { status: 400 });

@@ -7,7 +7,7 @@ type Question = {
     type: "MCQ" | "TrueFalse" | "Coding";
     questionText: string;
     options?: string[];
-    correctAnswer?: string; // Add correctAnswer for evaluation
+    correctAnswer?: string;
 };
 
 type Answer = {
@@ -65,7 +65,6 @@ export default function TestPage() {
         setScore(finalScore);
         setSubmitted(true);
     
-        // ✅ Send the result to MongoDB
         try {
             const response = await fetch('/api/tests/saveTestResults', {
                 method: 'POST',

@@ -1,6 +1,6 @@
 import NextAuth from "next-auth";
 import GitHub from "next-auth/providers/github";
-import Google from "next-auth/providers/google"; // ✅ Import Google provider
+import Google from "next-auth/providers/google"; 
 import connectDB from "@/lib/mongodb";
 import User from "@/models/User";
 
@@ -17,9 +17,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   ],
   events: {
     async signIn({ user }) {
-      await connectDB(); // Ensure MongoDB is connected
+      await connectDB();
 
-      const existingUser = await User.findOne({ email: user.email }); // Check by email
+      const existingUser = await User.findOne({ email: user.email }); 
 
       if (!existingUser) {
         try {
