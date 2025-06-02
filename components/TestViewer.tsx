@@ -37,7 +37,7 @@ const TestViewer: React.FC<TestViewerProps> = ({ test, onClose }) => {
         </div>
 
         {/* Test Score */}
-        <p>🏆 Score: {test.score} / 100</p>
+
         <p>📊 Percentage: {test.percentage.toFixed(2)}%</p>
 
         {/* Questions & Answers */}

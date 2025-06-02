@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { auth, signOut, signIn } from "@/auth";
+import { auth, signOut } from "@/auth";
 import Link from "next/link";
 
 const Navbar = async () => {
@@ -23,7 +23,7 @@ const Navbar = async () => {
 
         {/* Right Section */}
         <div className="flex items-center gap-5">
-          {session && session?.user ? (
+          {session && session.user ? (
             <>
               <Link href="/upload">
                 <button className="customBtn01">Learn</button>
@@ -41,32 +41,28 @@ const Navbar = async () => {
               </form>
 
               <Link href="/UserDashboard">
-                <span className="flex items-center gap-2 customBtn01">
+                <button className="customBtn01 inline-flex items-center gap-2 overflow-visible">
                   <Image
-                    src={session.user?.image || "Image"}
-                    alt={`${session?.user?.name || "User"} Avatar`}
-                    width={40}
-                    height={40}
-                    className="rounded-full border border-black object-cover"
+                    src={session.user.image || "/default-avatar.png"}
+                    alt={`${session.user.name} Avatar`}
+                    width={24}
+                    height={24}
+                    className="rounded-full border border-black object-cover transform scale-125"
                   />
-                  {session.user?.name || "User"}
-                </span>
+                  <span className="text-sm">{session.user.name}</span>
+                </button>
               </Link>
-
             </>
-         ) : (
-          <div className="flex gap-3">
-            <Link href="/signup">
-              <button className="customBtn01">Get Started</button>
-            </Link>
-
-              <button type="submit" className="customBtn01">
-                Login
-              </button>
-
-          </div>
-        )
-        }
+          ) : (
+            <div className="flex gap-3">
+              <Link href="/signup">
+                <button className="customBtn01">Get Started</button>
+              </Link>
+              <Link href="/login">
+                <button className="customBtn01">Login</button>
+              </Link>
+            </div>
+          )}
         </div>
       </nav>
     </header>

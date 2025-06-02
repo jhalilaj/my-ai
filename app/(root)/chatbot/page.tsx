@@ -46,7 +46,7 @@ const ChatPage: React.FC = () => {
       const res = await fetch(`/api/test/get?lessonId=${lessons[currentLessonIndex]?._id}`);
 
       if (res.status === 404) {
-        console.warn("Test not found, generating a new test...");
+        console.warn("Test not found, generating a new test");
         await generateTest();
         return;
       }
@@ -99,7 +99,7 @@ const ChatPage: React.FC = () => {
 
       if (res.ok) {
         setIsConfirmingCompletion(false);
-        await fetchLessons(); // Refresh lesson data
+        await fetchLessons();
       } else {
         console.error("Failed to mark lesson as completed");
       }
@@ -109,7 +109,7 @@ const ChatPage: React.FC = () => {
   };
 
   const toggleSidebar = () => {
-    setIsSidebarVisible(!isSidebarVisible);  // Toggle the sidebar visibility
+    setIsSidebarVisible(!isSidebarVisible);
   };
 
   return (
@@ -166,7 +166,6 @@ const ChatPage: React.FC = () => {
             ))}
           </div>
 
-          {/* Complete Lesson */}
           <div className="flex justify-center mt-6">
             {lessons[currentLessonIndex]?.completed ? (
               <div className="w-full py-3 text-center bg-gray-600 text-white font-bold rounded-md shadow-md">
@@ -183,7 +182,7 @@ const ChatPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Take A Test Button */}
+  
         <button
           className="w-full py-3 bg-greenAccent text-black font-bold rounded-md shadow-md hover:bg-green-400 transition"
           onClick={() => {

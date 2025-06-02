@@ -14,20 +14,16 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "File path is required" }, { status: 400 });
     }
 
-    // ✅ Remove leading slash if present
     if (filePath.startsWith("/")) {
       filePath = filePath.substring(1);
     }
 
-    // ✅ Resolve full path in `public/uploads/`
     const fullPath = path.join(process.cwd(), "public", filePath);
 
-    // ✅ Ensure file exists
     if (!fs.existsSync(fullPath)) {
       return NextResponse.json({ error: "File not found", fullPath }, { status: 404 });
     }
 
-    // ✅ If file is DOCX, extract text
     let fileContent = "";
     if (filePath.endsWith(".docx")) {
       const buffer = fs.readFileSync(fullPath);

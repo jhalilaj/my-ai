@@ -2,15 +2,9 @@ import { NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import Lesson from "@/models/Lesson";
 import Topic from "@/models/Topic";
-import OpenAI from "openai";
 
-// Create an OpenAI instance for GPT (use your GPT API key)
-const openai = new OpenAI({
-  apiKey: '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',
-});
-
-// Llama API details (OpenRouter). Also reused for Gemini and Deepseek.
-const llamaApiKey = "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";
+// OpenRouter API key (used for Llama, Gemini, Deepseek, and GPT)
+const openrouterApiKey = "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";
 
 export async function POST(req: Request) {
   await connectDB();
@@ -39,7 +33,6 @@ export async function POST(req: Request) {
       for (const filePath of content) {
         const fileRes = await fetch(`http://localhost:3000/api/files/read?filePath=${encodeURIComponent(filePath)}`);
         const fileData = await fileRes.json();
-
         if (fileData.success && fileData.content) {
           extractedText += "\n\n" + fileData.content;
         } else {
@@ -50,7 +43,6 @@ export async function POST(req: Request) {
       console.log("📂 Single file input. Extracting text...");
       const fileRes = await fetch(`http://localhost:3000/api/files/read?filePath=${encodeURIComponent(content)}`);
       const fileData = await fileRes.json();
-
       if (fileData.success && fileData.content) {
         extractedText = fileData.content;
       } else {
@@ -63,112 +55,87 @@ export async function POST(req: Request) {
 
     console.log("🧠 Extracted Text Preview:", extractedText.substring(0, 500));
 
-    // Decide which AI API to use – here we use the aiModel passed in the payload.
-    // (Optionally, you could retrieve topic.aiModel instead.)
+    // Decide which AI API to use
     let usedAI = "";
-    let sectionResponseData: any = null;
+    let sectionResponseData: string = "[]";
     const sectionPrompt = `
       You are an AI tutor. Analyze the following content and determine how to split it into multiple sections based on its complexity.
       If the content is too difficult, split it into more parts with detailed explanations.
       If it is simple, divide it into 2-3 parts for a concise overview.
-      
+
       Topic Content:
       ${extractedText}
-      
+
       Provide a list of sections in this format: ["Section 1", "Section 2", "Section 3", ...]
       Only return the section list.
     `;
 
+    // Helper to call OpenRouter
+    async function callOpenRouter(model: string, prompt: string | { role: string; content: any }[]) {
+      const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${openrouterApiKey}`,
+          "HTTP-Referer": "https://your-site-url.com",
+          "X-Title": "YourSiteName",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model,
+          messages: Array.isArray(prompt)
+            ? prompt
+            : [{ role: "user", content: prompt }],
+        }),
+      });
+      const json = await res.json();
+      return json.choices?.[0]?.message?.content || "";
+    }
+
+    // Generate sections
     if (aiModel === "llama") {
       usedAI = "Llama";
-      console.log("🔍 Using Llama API for section generation.");
-      const llamaSectionRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${llamaApiKey}`,
-          "HTTP-Referer": "https://your-site-url.com",
-          "X-Title": "YourSiteName",
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "meta-llama/llama-4-scout",
-          messages: [
-            { role: "user", content: [{ type: "text", text: sectionPrompt }] },
-          ],
-        }),
-      });
-      const llamaSectionData = await llamaSectionRes.json();
-      sectionResponseData = llamaSectionData.choices?.[0]?.message?.content || "[]";
+      sectionResponseData = await callOpenRouter(
+        "meta-llama/llama-4-scout",
+        [{ role: "user", content: [{ type: "text", text: sectionPrompt }] }]
+      );
     } else if (aiModel === "gemini") {
       usedAI = "Gemini";
-      console.log("🔍 Using Gemini API for section generation.");
-      const geminiSectionRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${llamaApiKey}`, // Reusing same API key
-          "HTTP-Referer": "https://your-site-url.com",
-          "X-Title": "YourSiteName",
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "google/gemini-2.5-pro-preview-03-25",
-          messages: [
-            { role: "user", content: [{ type: "text", text: sectionPrompt }] },
-          ],
-        }),
-      });
-      const geminiSectionData = await geminiSectionRes.json();
-      sectionResponseData = geminiSectionData.choices?.[0]?.message?.content || "[]";
+      sectionResponseData = await callOpenRouter(
+        "google/gemini-2.0-flash-001",
+        [{ role: "user", content: [{ type: "text", text: sectionPrompt }] }]
+      );
     } else if (aiModel === "deepseek") {
       usedAI = "Deepseek";
-      console.log("🔍 Using Deepseek API for section generation.");
-      const deepseekSectionRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${llamaApiKey}`, // Reusing same API key
-          "HTTP-Referer": "https://your-site-url.com",
-          "X-Title": "YourSiteName",
-          "Content-Type": "application/json",
-        },
-        // For Deepseek, the message format is a plain text prompt.
-        body: JSON.stringify({
-          model: "deepseek/deepseek-chat-v3-0324",
-          messages: [
-            { role: "user", content: sectionPrompt },
-          ],
-        }),
-      });
-      const deepseekSectionData = await deepseekSectionRes.json();
-      sectionResponseData = deepseekSectionData.choices?.[0]?.message?.content || "[]";
-    } else { // Default to GPT
-      usedAI = "GPT";
-      console.log("🔍 Using GPT API for section generation.");
-      const gptSectionRes = await openai.chat.completions.create({
-        model: "gpt-4",
-        messages: [{ role: "user", content: sectionPrompt }],
-      });
-      sectionResponseData = gptSectionRes.choices?.[0]?.message?.content || "[]";
+      sectionResponseData = await callOpenRouter("deepseek/deepseek-chat-v3-0324", sectionPrompt);
+    } else {
+      usedAI = "OpenRouter GPT";
+      sectionResponseData = await callOpenRouter("openai/gpt-4o", sectionPrompt);
     }
 
     // Extract and parse the JSON array from the AI response
     const jsonMatch = sectionResponseData.match(/```json\s*([\s\S]*?)\s*```/i);
-    const jsonString = jsonMatch ? jsonMatch[1].trim() : sectionResponseData.replace(/```/g, "").trim();
+    const jsonString = jsonMatch
+      ? jsonMatch[1].trim()
+      : sectionResponseData.replace(/```/g, "").trim();
 
-    let sections;
+    let sections: string[];
     try {
       sections = JSON.parse(jsonString);
       if (!Array.isArray(sections) || sections.length === 0) {
-        throw new Error("OpenAI response is not a valid JSON array.");
+        throw new Error("Response is not a valid JSON array");
       }
     } catch (error) {
-      console.error("❌ Error parsing OpenAI response:", error);
-      return NextResponse.json({ error: "Failed to generate sections due to OpenAI response format." }, { status: 500 });
+      console.error("❌ Error parsing sections:", error);
+      return NextResponse.json(
+        { error: "Failed to generate sections due to AI response format." },
+        { status: 500 }
+      );
     }
 
     console.log(`✅ Sections Generated (${usedAI}): ${sections.length}`);
 
-    // Generate lessons for each section using the chosen AI
-    let lessons = [];
+    // Generate lessons for each section
+    const lessons: string[] = [];
     for (let i = 0; i < sections.length; i++) {
       console.log(`📝 Generating Lesson ${i + 1} (${usedAI}): ${sections[i]}`);
       const lessonPrompt = `
@@ -179,74 +146,27 @@ export async function POST(req: Request) {
         - In-depth Explanation
         - Real-world Examples
         - Summary and Review
+
         Topic Content: ${extractedText}
       `;
 
       let lessonContent = "";
       if (aiModel === "llama") {
-        const llamaLessonRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${llamaApiKey}`,
-            "HTTP-Referer": "https://your-site-url.com",
-            "X-Title": "YourSiteName",
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            model: "meta-llama/llama-4-scout",
-            messages: [
-              { role: "user", content: [{ type: "text", text: lessonPrompt }] },
-            ],
-          }),
-        });
-        const llamaLessonData = await llamaLessonRes.json();
-        lessonContent = llamaLessonData.choices?.[0]?.message?.content || "";
+        lessonContent = await callOpenRouter(
+          "meta-llama/llama-4-scout",
+          [{ role: "user", content: [{ type: "text", text: lessonPrompt }] }]
+        );
       } else if (aiModel === "gemini") {
-        console.log("🔍 Using Gemini API for lesson generation.");
-        const geminiLessonRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${llamaApiKey}`,
-            "HTTP-Referer": "https://your-site-url.com",
-            "X-Title": "YourSiteName",
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            model: "google/gemini-2.5-pro-preview-03-25",
-            messages: [
-              { role: "user", content: [{ type: "text", text: lessonPrompt }] },
-            ],
-          }),
-        });
-        const geminiLessonData = await geminiLessonRes.json();
-        lessonContent = geminiLessonData.choices?.[0]?.message?.content || "";
+        lessonContent = await callOpenRouter(
+          "google/gemini-2.0-flash-001",
+          [{ role: "user", content: [{ type: "text", text: lessonPrompt }] }]
+        );
       } else if (aiModel === "deepseek") {
-        console.log("🔍 Using Deepseek API for lesson generation.");
-        const deepseekLessonRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${llamaApiKey}`,
-            "HTTP-Referer": "https://your-site-url.com",
-            "X-Title": "YourSiteName",
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            model: "deepseek/deepseek-chat-v3-0324",
-            messages: [
-              { role: "user", content: lessonPrompt },
-            ],
-          }),
-        });
-        const deepseekLessonData = await deepseekLessonRes.json();
-        lessonContent = deepseekLessonData.choices?.[0]?.message?.content || "";
-      } else { // Default to GPT
-        const gptLessonRes = await openai.chat.completions.create({
-          model: "gpt-4",
-          messages: [{ role: "user", content: lessonPrompt }],
-        });
-        lessonContent = gptLessonRes.choices?.[0]?.message?.content || "";
+        lessonContent = await callOpenRouter("deepseek/deepseek-chat-v3-0324", lessonPrompt);
+      } else {
+        lessonContent = await callOpenRouter("openai/gpt-4o", lessonPrompt);
       }
-      
+
       // Save the generated lesson in the database
       const lesson = new Lesson({
         topicId,
@@ -254,9 +174,8 @@ export async function POST(req: Request) {
         title: `Lesson ${i + 1}: ${sections[i]}`,
         content: lessonContent,
       });
-      
       await lesson.save();
-      lessons.push(lesson._id);
+      lessons.push(lesson._id.toString());
     }
 
     topic.lessons = lessons;

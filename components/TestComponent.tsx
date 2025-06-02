@@ -33,37 +33,38 @@ const TestComponent: React.FC<TestComponentProps> = ({ test }) => {
       type: "theory" | "practical";
     }[]
   >([]);
-  const [isTyping, setIsTyping] = useState(false); // Typing indicator state
+  const [isTyping, setIsTyping] = useState(false);
 
+  // Load any persisted answers/score/feedback
   useEffect(() => {
-    const storedAnswers = localStorage.getItem(`answers-${test._id}`);
-    const storedScore = localStorage.getItem(`score-${test._id}`);
-    const storedFeedback = localStorage.getItem(`feedback-${test._id}`);
+    const storedA = localStorage.getItem(`answers-${test._id}`);
+    const storedS = localStorage.getItem(`score-${test._id}`);
+    const storedF = localStorage.getItem(`feedback-${test._id}`);
 
-    if (storedAnswers) setUserAnswers(JSON.parse(storedAnswers));
-    if (storedScore) {
-      setScore(parseFloat(storedScore));
+    if (storedA) setUserAnswers(JSON.parse(storedA));
+    if (storedS) {
+      setScore(parseFloat(storedS));
       setSubmitted(true);
     }
-    if (storedFeedback) {
-      setFeedback(JSON.parse(storedFeedback));
-    }
+    if (storedF) setFeedback(JSON.parse(storedF));
   }, [test._id]);
 
   const handleAnswerChange = (index: number, value: number | string) => {
-    const newAnswers = [...userAnswers];
-    newAnswers[index] = value;
-    setUserAnswers(newAnswers);
-    localStorage.setItem(`answers-${test._id}`, JSON.stringify(newAnswers));
+    const next = [...userAnswers];
+    next[index] = value;
+    setUserAnswers(next);
+    localStorage.setItem(`answers-${test._id}`, JSON.stringify(next));
   };
 
   const handleSubmit = async () => {
+    // require all answers
     if (userAnswers.includes("") || userAnswers.includes(-1)) {
       setError("Please answer all questions before submitting.");
       return;
     }
 
-    setIsTyping(true); // Show typing animation while submitting the test
+    setError(null);
+    setIsTyping(true);
 
     try {
       const res = await fetch("/api/test/submit", {
@@ -75,22 +76,24 @@ const TestComponent: React.FC<TestComponentProps> = ({ test }) => {
           userAnswers,
         }),
       });
-
       const data = await res.json();
 
       if (res.ok && data.success) {
         setScore(data.score);
-        setSubmitted(true);
         setFeedback(data.feedback || []);
+        setSubmitted(true);
         localStorage.setItem(`score-${test._id}`, data.score.toString());
-        localStorage.setItem(`feedback-${test._id}`, JSON.stringify(data.feedback || []));
+        localStorage.setItem(
+          `feedback-${test._id}`,
+          JSON.stringify(data.feedback || [])
+        );
       } else {
         setError(data.error || "Test submission failed.");
       }
-    } catch (error) {
+    } catch {
       setError("Network error. Please try again.");
     } finally {
-      setIsTyping(false); // Hide typing animation once the test is submitted
+      setIsTyping(false);
     }
   };
 
@@ -107,7 +110,6 @@ const TestComponent: React.FC<TestComponentProps> = ({ test }) => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ lessonId: currentTest.lessonId }),
       });
-
       const data = await res.json();
 
       if (res.ok && data.success) {
@@ -119,7 +121,7 @@ const TestComponent: React.FC<TestComponentProps> = ({ test }) => {
       } else {
         setError(data.error || "Failed to generate a new test.");
       }
-    } catch (error) {
+    } catch {
       setError("Network error. Please try again.");
     } finally {
       setLoadingNewTest(false);
@@ -127,50 +129,58 @@ const TestComponent: React.FC<TestComponentProps> = ({ test }) => {
   };
 
   return (
-    <div className="w-full max-w-2xl bg-gray-800 p-6 rounded-md shadow-lg text-white overflow-auto h-[87vh] custom-scrollbar">
+    <div className="w-full max-w-2xl bg-gray-800 p-6 rounded-md shadow-lg text-white h-[87vh] overflow-auto custom-scrollbar">
       <h3 className="text-xl font-bold mb-4">Answer the Questions</h3>
-      {error && <p className="text-red-500">{error}</p>}
+      {error && <p className="text-red-500 mb-4">{error}</p>}
 
       {loadingNewTest ? (
-        <div className="text-center text-white">Generating New Test...</div>
+        <div className="text-center">Generating New Test...</div>
       ) : (
         <>
           {currentTest.questions.map((q, index) => {
             const userAnswer = userAnswers[index];
-            const isCorrect = q.type === "mcq" && submitted && currentTest.correctAnswers[index] === userAnswer;
+            const correctIndex = currentTest.correctAnswers[index];
+            const isMCQ = q.type === "mcq";
+            const isCorrect = isMCQ && submitted && correctIndex === userAnswer;
             const isWrong =
-              q.type === "mcq" && submitted && userAnswer === userAnswer && !isCorrect;
-
+              isMCQ &&
+              submitted &&
+              correctIndex !== null &&
+              userAnswer !== "" &&
+              correctIndex !== userAnswer;
             const fb = feedback.find((f) => f.index === index);
 
             return (
               <div key={index} className="mb-6">
-                <p className="font-semibold">
+                <p className="font-semibold mb-2">
                   {index + 1}. {q.question}
                 </p>
 
-                {q.type === "mcq" &&
-                  q.options?.map((option, i) => (
+                {/* MCQ options */}
+                {isMCQ &&
+                  q.options?.map((opt, i) => (
                     <label
                       key={i}
-                      className={`block cursor-pointer p-2 rounded-md 
-                      ${isCorrect && i === userAnswer ? "bg-green-500 text-black font-bold" : ""}
-                      ${isWrong && i === userAnswer ? "bg-red-500 text-white font-bold" : ""}
-                      ${submitted ? "opacity-80" : "hover:bg-gray-700"}`}
+                      className={`block cursor-pointer p-2 rounded-md
+                        ${isCorrect && i === userAnswer ? "bg-green-500 text-black font-bold" : ""}
+                        ${isWrong && i === userAnswer ? "bg-red-500 text-white font-bold" : ""}
+                        ${submitted ? "opacity-80" : "hover:bg-gray-700"}
+                      `}
                     >
                       <input
                         type="radio"
-                        name={`question-${index}`}
+                        name={`q-${index}`}
                         value={i}
                         checked={userAnswer === i}
                         onChange={() => handleAnswerChange(index, i)}
                         disabled={submitted}
                         className="mr-2"
                       />
-                      {option}
+                      {opt}
                     </label>
                   ))}
 
+                {/* free-text answers */}
                 {(q.type === "theory" || q.type === "practical") && (
                   <textarea
                     className="w-full mt-2 p-2 rounded bg-gray-700 text-white"
@@ -182,7 +192,22 @@ const TestComponent: React.FC<TestComponentProps> = ({ test }) => {
                   />
                 )}
 
-                {/* Show feedback after submission */}
+                {/* MCQ feedback */}
+                {submitted && isMCQ && (
+                  <>
+                    {isCorrect && (
+                      <p className="mt-2 text-green-400">✅ You got it!</p>
+                    )}
+                    {isWrong && correctIndex !== null && q.options && (
+                      <p className="mt-2 text-yellow-300">
+                        <strong>Correct answer:</strong>{" "}
+                        {q.options[correctIndex]}
+                      </p>
+                    )}
+                  </>
+                )}
+
+                {/* Theory/Practical feedback */}
                 {submitted && fb && (
                   <div className="mt-2 p-3 rounded bg-gray-700">
                     <p className="text-sm text-blue-400">
@@ -197,13 +222,14 @@ const TestComponent: React.FC<TestComponentProps> = ({ test }) => {
             );
           })}
 
-          {/* Show Typing animation */}
+          {/* Typing indicator */}
           {isTyping && (
             <div className="font-semibold text-gray-400 mb-6">
-              <p className="">AI-Tutor is checking your mark</p>
+              AI-Tutor is checking your answers…
             </div>
           )}
 
+          {/* Submit vs. Results */}
           {!submitted ? (
             <button
               onClick={handleSubmit}
@@ -213,9 +239,13 @@ const TestComponent: React.FC<TestComponentProps> = ({ test }) => {
             </button>
           ) : (
             <div className="mt-4">
-              <p className="text-green-500 font-bold">✅ Test Submitted! Your Score: {score?.toFixed(2)}%</p>
-              {score && score >= 80 && (
-                <p className="text-green-500">Recommended: Excellent job! Keep up the good work!</p>
+              <p className="text-green-500 font-bold">
+                ✅ Test Submitted! Your Score: {score?.toFixed(2)}%
+              </p>
+              {score !== null && score >= 80 && (
+                <p className="text-green-500">
+                  Recommended: Excellent job! Keep up the good work!
+                </p>
               )}
               <button
                 onClick={handleGenerateNewTest}
