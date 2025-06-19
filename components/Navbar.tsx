@@ -19,6 +19,7 @@ const Navbar = async () => {
             />
           </Link>
         </div>
+
         <div className="flex items-center gap-5">
           {session && session.user ? (
             <>
@@ -39,13 +40,20 @@ const Navbar = async () => {
 
               <Link href="/UserDashboard">
                 <button className="customBtn01 inline-flex items-center gap-2 overflow-visible">
-                  <Image
-                    src={session.user.image || "/default-avatar.png"}
-                    alt={`${session.user.name} Avatar`}
-                    width={24}
-                    height={24}
-                    className="rounded-full border border-black object-cover transform scale-125"
-                  />
+          
+                  {session.user.image ? (
+                    <Image
+                      src={session.user.image}
+                      alt={`${session.user.name} Avatar`}
+                      width={24}
+                      height={24}
+                      className="rounded-full border border-black object-cover transform scale-125"
+                    />
+                  ) : (
+                    <div className="w-6 h-6 rounded-full bg-white border border-black flex items-center justify-center text-xs font-bold text-black">
+                      {session.user.name?.charAt(0).toUpperCase() || "?"}
+                    </div>
+                  )}
                   <span className="text-sm">{session.user.name}</span>
                 </button>
               </Link>

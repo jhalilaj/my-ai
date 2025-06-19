@@ -14,16 +14,15 @@ const SignupPage = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
 
-  const isMatching = confirmPassword === password && confirmPassword.length > 0;
   const emailIsValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  const canSubmit = emailIsValid && password && confirmPassword && isMatching;
+  const passwordIsValid = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z\d@$!%*?&]{8,}$/.test(password);
+  const isMatching = confirmPassword === password && confirmPassword.length > 0;
+  const canSubmit = emailIsValid && passwordIsValid && confirmPassword && isMatching;
 
-  const handleSubmit = async (e: { preventDefault: () => void; }) => {
+  const handleSubmit = async (e: { preventDefault: () => void }) => {
     e.preventDefault();
 
-    if (!canSubmit) {
-      return;
-    }
+    if (!canSubmit) return;
 
     try {
       const res = await fetch("/api/auth/signup", {
@@ -33,14 +32,32 @@ const SignupPage = () => {
         },
         body: JSON.stringify({ email, password, confirmPassword }),
       });
-      const data = await res.json();
-      if (res.ok) {
-        window.location.href = "/login";
-      } else {
 
-        setError(data.error || "An error occurred");
+      const data = await res.json();
+
+      if (res.ok) {
+        const loginRes = await signIn("credentials", {
+          redirect: false,
+          email,
+          password,
+        });
+
+        if (loginRes?.error) {
+          setError("Signup succeeded, but login failed.");
+        } else {
+          window.location.href = "/upload"; 
+        }
+      } else {
+        if (
+          data.message?.includes("registered using Google") ||
+          data.message?.includes("social login")
+        ) {
+          setError("This email is already registered using Google/GitHub. Please use social login instead.");
+        } else {
+          setError(data.message || data.error || "An error occurred");
+        }
       }
-    } catch (err) {
+    } catch {
       setError("Something went wrong. Please try again.");
     }
   };
@@ -52,7 +69,6 @@ const SignupPage = () => {
   return (
     <main className="min-h-screen flex items-center justify-center bg-primary text-white px-4">
       <div className="w-full max-w-4xl flex flex-col md:flex-row border-4 border-greenAccent rounded-xl shadow-lg overflow-hidden">
-
         <div className="w-full md:w-1/2 p-8 space-y-6 bg-customDark z-20">
           <h1 className="text-4xl font-bold">
             Join <span className="text-greenAccent">AI Tutor</span>
@@ -62,7 +78,7 @@ const SignupPage = () => {
           </p>
           <div className="flex flex-col gap-4">
             <button
-              onClick={() => signIn("google")}
+              onClick={() => signIn("google", { callbackUrl: "/upload" })}
               type="button"
               className="flex items-center justify-center gap-2 bg-greenAccent text-black font-semibold py-3 px-6 rounded-md hover:scale-105 transition-all w-full"
             >
@@ -71,7 +87,7 @@ const SignupPage = () => {
             </button>
 
             <button
-              onClick={() => signIn("github")}
+              onClick={() => signIn("github", { callbackUrl: "/upload" })}
               type="button"
               className="flex items-center justify-center gap-2 bg-white text-black font-semibold py-3 px-6 rounded-md hover:scale-105 transition-all w-full"
             >
@@ -92,7 +108,7 @@ const SignupPage = () => {
         <div className="w-full md:w-1/2 p-8 bg-white text-black space-y-4 z-20">
           <h2 className="text-2xl font-semibold mb-2">Or sign up with Email</h2>
 
-          {error && <p className="text-red-500">{error}</p>}
+          {error && <p className="text-red-500 font-semibold">{error}</p>}
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <input
@@ -165,6 +181,8 @@ const SignupPage = () => {
                     ? "Please enter a valid email."
                     : !password
                     ? "Password is required."
+                    : !passwordIsValid
+                    ? "Password must be at least 8 characters, include 1 uppercase, 1 lowercase, and 1 number."
                     : !confirmPassword
                     ? "Confirm your password."
                     : "Passwords do not match."}

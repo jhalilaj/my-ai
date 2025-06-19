@@ -1,7 +1,7 @@
 "use client";
-
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
 import { signIn } from "next-auth/react";
 import { FaGoogle, FaGithub } from "react-icons/fa";
@@ -10,21 +10,46 @@ const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const searchParams = useSearchParams();
 
   const emailIsValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   const canSubmit = emailIsValid && password;
 
   useEffect(() => {
+    const errorParam = searchParams.get("error");
+    if (errorParam === "AccessDenied") {
+      setError("This email is already registered with a password. Please use email/password to log in.");
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
     window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
   }, []);
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const result = await signIn("credentials", {
+      redirect: false,
+      email,
+      password,
+    });
+    if (result?.error) {
+      setError(result.error);
+    } else {
+      window.location.href = "/";
+    }
+  };
 
   return (
     <main className="min-h-screen flex items-center justify-center bg-primary px-4">
       <div className="w-full max-w-md bg-white border-4 border-greenAccent rounded-xl shadow-lg p-8 text-black space-y-6">
-
         <h1 className="text-3xl font-bold text-center">Login to AI Tutor</h1>
+        {error && (
+          <p className="text-center text-red-500 font-semibold">{error}</p>
+        )}
 
-        <form className="flex flex-col gap-4">
+        <form className="flex flex-col gap-4" onSubmit={handleLogin}>
           <input
             type="email"
             placeholder="Email address"

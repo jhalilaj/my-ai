@@ -3,7 +3,7 @@ import connectDB from "@/lib/mongodb";
 import Lesson from "@/models/Lesson";
 import Topic from "@/models/Topic";
 
-const openrouterApiKey = "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";
+const openrouterApiKey = "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";
 
 export async function POST(req: Request) {
   await connectDB();
