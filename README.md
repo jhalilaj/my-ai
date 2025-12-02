@@ -143,7 +143,7 @@ This project is licensed under the **MIT License** © 2025 [Your Name]
 
 ## 📬 Contact
 
-- LinkedIn: [Your LinkedIn](https://www.linkedin.com/in/juljan-halilaj-2a0a00275/)  
+- LinkedIn: [Halilaj Juljan](https://www.linkedin.com/in/juljan-halilaj-2a0a00275/)  
 - Email: Halilaj.Juljan@gmail.com 
 - GitHub: [github.com/yourusername](https://github.com/jhalilaj)
 
