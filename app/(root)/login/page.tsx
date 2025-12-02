@@ -19,7 +19,9 @@ const LoginPage = () => {
   useEffect(() => {
     const errorParam = searchParams.get("error");
     if (errorParam === "AccessDenied") {
-      setError("This email is already registered with a password. Please use email/password to log in.");
+      setError(
+        "This email is already registered with a password. Please use email/password to log in."
+      );
     }
   }, [searchParams]);
 
@@ -40,6 +42,20 @@ const LoginPage = () => {
       window.location.href = "/";
     }
   };
+
+const handleGuestLogin = async () => {
+  const result = await signIn("credentials", {
+    redirect: false,
+    email: "guest@demo.com",
+    password: "Golem2019@",
+  });
+  if (!result?.error) {
+    window.location.href = "/";
+  } else {
+    setError(result.error || "Guest login failed.");
+  }
+};
+
 
   return (
     <main className="min-h-screen flex items-center justify-center bg-primary px-4">
@@ -105,6 +121,16 @@ const LoginPage = () => {
         <div className="h-px bg-gray-300 my-2" />
 
         <div className="flex flex-col gap-4">
+          {/* Guest Login */}
+          <button
+            onClick={handleGuestLogin}
+            type="button"
+            className="flex items-center justify-center gap-2 bg-yellow-400 text-black font-semibold py-3 px-6 rounded-md hover:scale-105 transition-all w-full"
+          >
+            Login as Guest
+          </button>
+
+          {/* Social Logins */}
           <button
             onClick={() => signIn("google")}
             type="button"
@@ -126,7 +152,10 @@ const LoginPage = () => {
 
         <p className="text-sm text-center text-gray-600">
           Don’t have an account?{" "}
-          <Link href="/signup" className="text-greenAccent hover:underline font-semibold">
+          <Link
+            href="/signup"
+            className="text-greenAccent hover:underline font-semibold"
+          >
             Sign up here
           </Link>
         </p>

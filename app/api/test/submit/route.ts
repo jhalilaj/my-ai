@@ -9,7 +9,7 @@ import { auth } from "@/auth";
 
 const openrouterApiKey =
   process.env.OPENROUTER_API_KEY ||
-  "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";
+  "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";
 
 async function callOpenRouter(model: string, prompt: string): Promise<string> {
   const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
