@@ -1,30 +1,28 @@
-import { NextResponse } from "next/server";
-import connectDB from "@/lib/mongodb";
-import Lesson from "@/models/Lesson";
+import { NextRequest, NextResponse } from 'next/server'
+import { MongoClient, ObjectId } from 'mongodb'
 
-export async function PATCH(req: { json: () => PromiseLike<{ lessonId: any; completed: any; }> | { lessonId: any; completed: any; }; }) {
-  await connectDB();
-
-  try {
-    const { lessonId, completed } = await req.json();
-
-    if (!lessonId || completed === undefined) {
-      return NextResponse.json({ error: "Missing lessonId or Missing completed status" }, { status: 400 });
-    }
-
-    const updatedLesson = await Lesson.findByIdAndUpdate(
-      lessonId,
-      { completed }, 
-      { new: true }
-    );
-
-    if (!updatedLesson) {
-      return NextResponse.json({ error: "Lesson not found" }, { status: 404 });
-    }
-
-    return NextResponse.json({ success: true, updatedLesson });
-  } catch (error) {
-    console.error("Error updating lesson:", error);
-    return NextResponse.json({ error: "Failed to update lesson" }, { status: 500 });
+let client: MongoClient
+async function connectDB() {
+  if (!client) {
+    client = new MongoClient(process.env.MONGODB_URI!)
+    await client.connect()
   }
+  return client.db(process.env.MONGODB_DB)
+}
+
+export async function PATCH(req: NextRequest) {
+  const { lessonId, completed } = await req.json()
+  const db = await connectDB()
+  const lessons = db.collection('lessons')
+
+  const result = await lessons.updateOne(
+    { _id: new ObjectId(lessonId) },
+    { $set: { completed } }
+  )
+
+  if (result.matchedCount === 0) {
+    return NextResponse.json({ error: 'Lesson not found' }, { status: 404 })
+  }
+
+  return NextResponse.json({ success: true })
 }

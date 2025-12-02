@@ -2,7 +2,9 @@ import { NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
 import mammoth from "mammoth";
+// @ts-ignore
 import pdf from 'pdf-parse/lib/pdf-parse'
+
 
 export async function GET(req: Request) {
   try {
