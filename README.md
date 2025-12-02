@@ -1,7 +1,9 @@
 # AI-Powered Tutoring Platform
 
-![Platform Banner](https://your-image-link-here.com/banner.png)  
-*Professional AI-driven tutoring platform built with Next.js, TypeScript, React, MongoDB, and LLM integration via OpenRouter.*
+*Professional AI-driven tutoring platform built with Next.js, TypeScript, React, MongoDB, and LLM integration via OpenRouter.*  
+
+**Graduation Thesis:** *Zero-Prompt AI Tutor*  
+**Supervisor:** Mr. Dimopoulos, University of York, City College Campus
 
 ---
 
@@ -16,6 +18,16 @@ This repository hosts a **full-stack AI tutoring platform** that transforms raw 
 - Dynamic quizzes with AI grading  
 - Multi-model LLM selection (GPT-4, LLaMA, Gemini, DeepSeek)  
 - Dashboard for progress tracking and historical analytics  
+
+---
+
+## 🌐 Live Demo
+
+The platform is **fully deployed on Vercel**:  
+
+**[Try the AI Tutor Online](https://zeropromt.vercel.app/)**  
+
+> ⚠️ Note: AI usage is limited to the free versions of the AI models, which have limited tokens per session.
 
 ---
 
@@ -111,36 +123,6 @@ The platform uses a **layered architecture**:
 
 > This separation ensures maintainable, scalable, and testable code.
 
----
-
-## ⚡ Installation
-
-```bash
-git clone https://github.com/yourusername/ai-tutoring-platform.git
-cd ai-tutoring-platform
-npm install
-```
-Create a .env.local file at the root of your project with the following variables:
-```
-MONGO_URI=your_mongodb_connection_string
-NEXTAUTH_SECRET=your_secret
-GOOGLE_CLIENT_ID=your_google_id
-GOOGLE_CLIENT_SECRET=your_google_secret
-GITHUB_CLIENT_ID=your_github_id
-GITHUB_CLIENT_SECRET=your_github_secret
-OPENROUTER_API_KEY=your_openrouter_api_key
-
-```
-Run the development server:
-```
-npm run dev
-
-```
-Open http://localhost:3000
- in your browser to see the app.
-
----
-
 ## 🧩 Usage
 
 1. Sign up or log in using email or OAuth (Google/GitHub).  
@@ -153,18 +135,6 @@ Open http://localhost:3000
 
 ---
 
-## 📈 Contributions
-
-Contributions are welcome! You can:
-
-- Enhance AI capabilities or integrate new LLMs.  
-- Improve UI/UX for lessons, chat, and dashboard.  
-- Add new features like gamification or content recommendations.  
-
-Please open an issue or submit a pull request for any changes.
-
----
-
 ## 📝 License
 
 This project is licensed under the **MIT License** © 2025 [Your Name]
@@ -173,9 +143,9 @@ This project is licensed under the **MIT License** © 2025 [Your Name]
 
 ## 📬 Contact
 
-- LinkedIn: [Your LinkedIn](https://www.linkedin.com/in/yourprofile)  
-- Email: your.email@example.com  
-- GitHub: [github.com/yourusername](https://github.com/yourusername)
+- LinkedIn: [Your LinkedIn](https://www.linkedin.com/in/juljan-halilaj-2a0a00275/)  
+- Email: Halilaj.Juljan@gmail.com 
+- GitHub: [github.com/yourusername](https://github.com/jhalilaj)
 
 ---
 
@@ -185,7 +155,6 @@ This project is licensed under the **MIT License** © 2025 [Your Name]
 - [NextAuth.js](https://next-auth.js.org/) for authentication.  
 - [MongoDB](https://www.mongodb.com/) for database storage.  
 - [OpenRouter](https://openrouter.ai/) for LLM integration.  
-- [`pdf-parse`](https://www.npmjs.com/package/pdf-parse) and [`mammoth`](https://www.npmjs.com/package/mammoth) for document processing.
 
 ---
 
