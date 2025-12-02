@@ -121,16 +121,6 @@ const handleGuestLogin = async () => {
         <div className="h-px bg-gray-300 my-2" />
 
         <div className="flex flex-col gap-4">
-          {/* Guest Login */}
-          <button
-            onClick={handleGuestLogin}
-            type="button"
-            className="flex items-center justify-center gap-2 bg-yellow-400 text-black font-semibold py-3 px-6 rounded-md hover:scale-105 transition-all w-full"
-          >
-            Login as Guest
-          </button>
-
-          {/* Social Logins */}
           <button
             onClick={() => signIn("google")}
             type="button"
