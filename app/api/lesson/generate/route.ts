@@ -3,7 +3,8 @@ import connectDB from "@/lib/mongodb";
 import Lesson from "@/models/Lesson";
 import Topic from "@/models/Topic";
 
-const openrouterApiKey = "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";
+const openrouterApiKey = process.env.OPENROUTER_API_KEY!;
+
 
 export async function POST(req: Request) {
   await connectDB();
@@ -90,22 +91,29 @@ export async function POST(req: Request) {
     if (aiModel === "llama") {
       usedAI = "Llama";
       sectionResponseData = await callOpenRouter(
-        "meta-llama/llama-4-scout",
+        "meta-llama/llama-3.3-70b-instruct:free",
         [{ role: "user", content: [{ type: "text", text: sectionPrompt }] }]
       );
     } else if (aiModel === "gemini") {
       usedAI = "Gemini";
       sectionResponseData = await callOpenRouter(
-        "google/gemini-2.0-flash-001",
+        "google/gemini-2.0-flash-exp:free",
         [{ role: "user", content: [{ type: "text", text: sectionPrompt }] }]
       );
     } else if (aiModel === "deepseek") {
       usedAI = "Deepseek";
-      sectionResponseData = await callOpenRouter("deepseek/deepseek-chat-v3-0324", sectionPrompt);
+      sectionResponseData = await callOpenRouter(
+        "tngtech/deepseek-r1t2-chimera:free",
+        sectionPrompt
+      );
     } else {
       usedAI = "OpenRouter GPT";
-      sectionResponseData = await callOpenRouter("openai/gpt-4o", sectionPrompt);
+      sectionResponseData = await callOpenRouter(
+        "openai/gpt-oss-20b:free",
+        sectionPrompt
+      );
     }
+
 
     const jsonMatch = sectionResponseData.match(/```json\s*([\s\S]*?)\s*```/i);
     const jsonString = jsonMatch
@@ -146,19 +154,26 @@ export async function POST(req: Request) {
       let lessonContent = "";
       if (aiModel === "llama") {
         lessonContent = await callOpenRouter(
-          "meta-llama/llama-4-scout",
+          "meta-llama/llama-3.3-70b-instruct:free",
           [{ role: "user", content: [{ type: "text", text: lessonPrompt }] }]
         );
       } else if (aiModel === "gemini") {
         lessonContent = await callOpenRouter(
-          "google/gemini-2.0-flash-001",
+          "google/gemini-2.0-flash-exp:free",
           [{ role: "user", content: [{ type: "text", text: lessonPrompt }] }]
         );
       } else if (aiModel === "deepseek") {
-        lessonContent = await callOpenRouter("deepseek/deepseek-chat-v3-0324", lessonPrompt);
+        lessonContent = await callOpenRouter(
+          "tngtech/deepseek-r1t2-chimera:free",
+          lessonPrompt
+        );
       } else {
-        lessonContent = await callOpenRouter("openai/gpt-4o", lessonPrompt);
+        lessonContent = await callOpenRouter(
+          "openai/gpt-oss-20b:free",
+          lessonPrompt
+        );
       }
+
 
       const lesson = new Lesson({
         topicId,

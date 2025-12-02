@@ -6,9 +6,7 @@ import connectDB from "@/lib/mongodb";
 import Test from "@/models/Test";
 import Lesson from "@/models/Lesson";
 import Topic from "@/models/Topic";
-const openrouterApiKey =
-  process.env.OPENROUTER_API_KEY ||
-  "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";
+const openrouterApiKey = process.env.OPENROUTER_API_KEY!;
 
 async function callOpenRouter(model: string, prompt: string): Promise<string> {
   const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
@@ -81,27 +79,41 @@ export async function POST(req: Request) {
     - "correctAnswer": "A"/"B"/"C"/"D" for mcq, or a sample answer for theory/practical
         `.trim();
     let testRawResponse: string;
+
     switch (chosenModel) {
       case "llama":
-        console.log("  Using Llama API for test generation.");
-        testRawResponse = await callOpenRouter("meta-llama/llama-4-scout", prompt);
+        console.log("🦙 Using Llama (FREE)");
+        testRawResponse = await callOpenRouter(
+          "meta-llama/llama-3.3-70b-instruct:free",
+          prompt
+        );
         break;
 
       case "gemini":
-        console.log("  Using Gemini API for test generation.");
-        testRawResponse = await callOpenRouter("google/gemini-2.0-flash-001", prompt);
+        console.log("✨ Using Gemini (FREE)");
+        testRawResponse = await callOpenRouter(
+          "google/gemini-2.0-flash-exp:free",
+          prompt
+        );
         break;
 
       case "deepseek":
-        console.log("  Using Deepseek API for test generation.");
-        testRawResponse = await callOpenRouter("deepseek/deepseek-chat-v3-0324", prompt);
+        console.log("🐉 Using Deepseek (FREE)");
+        testRawResponse = await callOpenRouter(
+          "tngtech/deepseek-r1t2-chimera:free",
+          prompt
+        );
         break;
 
       default:
-        console.log("  Routing GPT → openrouter.ai");
-        testRawResponse = await callOpenRouter("openai/gpt-4o", prompt);
+        console.log("🤖 Using GPT OSS (FREE)");
+        testRawResponse = await callOpenRouter(
+          "openai/gpt-oss-20b:free",
+          prompt
+        );
         break;
     }
+
 
     console.log("Raw AI Test Response:", testRawResponse);
 

@@ -7,9 +7,7 @@ import Lesson from "@/models/Lesson";
 import Topic from "@/models/Topic";
 import { auth } from "@/auth";
 
-const openrouterApiKey =
-  process.env.OPENROUTER_API_KEY ||
-  "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";
+const openrouterApiKey = process.env.OPENROUTER_API_KEY!;
 
 async function callOpenRouter(model: string, prompt: string): Promise<string> {
   const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
@@ -125,18 +123,31 @@ export async function POST(req: Request) {
         try {
           let rawEval = "";
           if (chosenModel === "llama") {
-            console.log(`🦙  Evaluating with Llama for question ${i}`);
-            rawEval = await callOpenRouter("meta-llama/llama-4-scout", evaluationPrompt);
+            console.log(`🦙  Evaluating with Llama (FREE) for question ${i}`);
+            rawEval = await callOpenRouter(
+              "meta-llama/llama-3.3-70b-instruct:free",
+              evaluationPrompt
+            );
           } else if (chosenModel === "gemini") {
-            console.log(`🤖  Evaluating with Gemini for question ${i}`);
-            rawEval = await callOpenRouter("google/gemini-2.0-flash-001", evaluationPrompt);
+            console.log(`✨  Evaluating with Gemini (FREE) for question ${i}`);
+            rawEval = await callOpenRouter(
+              "google/gemini-2.0-flash-exp:free",
+              evaluationPrompt
+            );
           } else if (chosenModel === "deepseek") {
-            console.log(`🔍  Evaluating with Deepseek for question ${i}`);
-            rawEval = await callOpenRouter("deepseek/deepseek-chat-v3-0324", evaluationPrompt);
+            console.log(`🐉  Evaluating with Deepseek (FREE) for question ${i}`);
+            rawEval = await callOpenRouter(
+              "tngtech/deepseek-r1t2-chimera:free",
+              evaluationPrompt
+            );
           } else {
-            console.log(`✨  Evaluating with GPT via OpenRouter for question ${i}`);
-            rawEval = await callOpenRouter("openai/gpt-4o", evaluationPrompt);
+            console.log(`🤖  Evaluating with GPT OSS (FREE) for question ${i}`);
+            rawEval = await callOpenRouter(
+              "openai/gpt-oss-20b:free",
+              evaluationPrompt
+            );
           }
+
 
           const sanitized = rawEval.replace(/```json|```/g, "").trim();
           try {
